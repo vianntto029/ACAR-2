@@ -1,15 +1,18 @@
 /* =============================================
    Programa ACAR Sabatino - Estilos AZULES
-   Tipografía: Quicksand
+   Tipografía: Sora
    Paleta: #1D4ED8 (primary), #1E3A8A (dark), #DBEAFE (light)
+   Fondo: degradado azul -> blanco oseo desde abajo
    ============================================= */
 
 *, *::before, *::after { box-sizing: border-box; }
 
 body {
-  font-family: 'Quicksand', sans-serif !important;
+  font-family: 'Sora', sans-serif !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(180deg, #e8f4fd 0%, #ffffff 40%, #f8fafc 100%);
+  min-height: 100vh;
 }
 
 .app-shell {
@@ -27,8 +30,8 @@ body {
   align-items: stretch;
   color: #f8fafc;
   background:
-    linear-gradient(135deg, rgba(29, 78, 216, 0.94), rgba(30, 58, 138, 0.98)),
-    url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1600&q=80');
+    linear-gradient(135deg, rgba(29, 78, 216, 0.92), rgba(30, 58, 138, 0.97)),
+    url('/bg-hero.jpg');
   background-size: cover;
   background-position: center;
   border-radius: 12px;
@@ -175,7 +178,7 @@ p { margin: 0; }
   border: 1px solid #d9e2ea;
   border-radius: 8px;
   font-size: 13px;
-  font-family: 'Quicksand', sans-serif;
+  font-family: 'Sora', sans-serif;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -198,7 +201,7 @@ p { margin: 0; }
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
-  font-family: 'Quicksand', sans-serif;
+  font-family: 'Sora', sans-serif;
   transition: background 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
 }
 
@@ -246,7 +249,7 @@ p { margin: 0; }
   text-overflow: ellipsis;
   white-space: nowrap;
   min-height: 40px !important;
-  font-family: 'Quicksand', sans-serif;
+  font-family: 'Sora', sans-serif;
   font-weight: 600;
 }
 
@@ -305,7 +308,7 @@ p { margin: 0; }
   cursor: pointer;
   min-height: auto !important;
   white-space: nowrap;
-  font-family: 'Quicksand', sans-serif;
+  font-family: 'Sora', sans-serif;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
@@ -370,7 +373,7 @@ input, select {
   border-radius: 8px;
   background: #ffffff;
   color: #10202f;
-  font-family: 'Quicksand', sans-serif;
+  font-family: 'Sora', sans-serif;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -394,7 +397,7 @@ button, .primary {
   padding: 0 16px;
   background: #ffffff;
   color: #10202f;
-  font-family: 'Quicksand', sans-serif;
+  font-family: 'Sora', sans-serif;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -473,13 +476,6 @@ button:disabled {
   transform: translateY(-2px);
 }
 
-.status {
-  min-height: 22px;
-  color: #1D4ED8;
-  font-size: 14px;
-  font-weight: 800;
-}
-
 .list-panel {
   overflow: hidden;
   transition: box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -498,6 +494,8 @@ button:disabled {
   padding: 22px;
   border-bottom: 1px solid #e2e8f0;
 }
+
+.list-title div { display: flex; flex-direction: column; gap: 4px; }
 
 .list-title span {
   flex: 0 0 auto;
@@ -545,6 +543,28 @@ tbody tr:hover {
   text-align: center;
 }
 
+.status-card {
+  margin-top: 16px;
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid #d9e2ea;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  color: #1D4ED8;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  transition: all 0.3s ease;
+  animation: glassFadeIn 0.4s ease;
+}
+
+.status-card:hover {
+  box-shadow: 0 8px 24px rgba(29, 78, 216, 0.12);
+  transform: translateY(-1px);
+}
+
 @media (max-width: 900px) {
   .app-shell { padding: 18px; }
   .hero-panel, .content-grid { grid-template-columns: 1fr; }
@@ -561,6 +581,7 @@ tbody tr:hover {
   align-items: center;
   justify-content: center;
   padding: 24px;
+  background: linear-gradient(180deg, #e8f4fd 0%, #ffffff 40%, #f8fafc 100%);
 }
 
 .student-form-container {
@@ -644,7 +665,7 @@ tbody tr:hover {
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  font-family: 'Quicksand', sans-serif;
+  font-family: 'Sora', sans-serif;
 }
 
 .student-form-glass input:focus {
@@ -818,6 +839,7 @@ tbody tr:hover {
   align-items: center;
   justify-content: center;
   padding: 24px;
+  background: linear-gradient(180deg, #e8f4fd 0%, #ffffff 40%, #f8fafc 100%);
 }
 
 .login-view::before {
@@ -913,7 +935,7 @@ tbody tr:hover {
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  font-family: 'Quicksand', sans-serif;
+  font-family: 'Sora', sans-serif;
 }
 
 .login-form input:focus {
@@ -934,7 +956,7 @@ tbody tr:hover {
   color: white;
   border-color: #1D4ED8;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  font-family: 'Quicksand', sans-serif;
+  font-family: 'Sora', sans-serif;
 }
 
 .login-form button:hover {
@@ -961,6 +983,34 @@ tbody tr:hover {
   padding: 32px;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+.logo-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+}
+
+.logo-header img {
+  max-height: 80px;
+  width: auto;
+}
+
+.logo-header .fundacion-logo {
+  max-height: 60px;
+}
+
+.logo-header .programa-logo {
+  max-height: 50px;
 }
 
 .admin-header {
@@ -998,7 +1048,7 @@ tbody tr:hover {
   color: #10202f;
   background: #ffffff;
   cursor: pointer;
-  font-family: 'Quicksand', sans-serif;
+  font-family: 'Sora', sans-serif;
   transition: border-color 0.3s ease;
 }
 
@@ -1023,6 +1073,7 @@ tbody tr:hover {
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
+  font-family: 'Sora', sans-serif;
 }
 
 .logout-btn:hover {

@@ -53,7 +53,6 @@ export function AttendanceProvider({ children }) {
       snapshot.forEach((child) => {
         data.push({ ...child.val(), id: child.key })
       })
-      console.log('[ACAR] materias updated:', data.length, data)
       setMaterias(data)
     })
     return () => unsubscribe()
@@ -76,19 +75,8 @@ export function AttendanceProvider({ children }) {
     const clean = nombre.trim()
     if (!clean) return
     const exists = materias.find(m => m.nombre.toLowerCase() === clean.toLowerCase())
-    if (exists) {
-      console.log('[ACAR] Materia ya existe:', clean)
-      return
-    }
-    try {
-      console.log('[ACAR] Agregando materia:', clean)
-      const refPath = `institutos/${institutoActivo}/materias`
-      console.log('[ACAR] Path:', refPath)
-      await push(ref(db, refPath), { nombre: clean })
-      console.log('[ACAR] push completado')
-    } catch (err) {
-      console.error('[ACAR] Error al agregar materia:', err)
-    }
+    if (exists) return
+    await push(ref(db, `institutos/${institutoActivo}/materias`), { nombre: clean })
   }
 
   async function deleteMateria(id) {
