@@ -353,7 +353,8 @@ export default function AdminView() {
             </tbody>
           </table>
         </div>
-      <div className="status-card">{status}</div>
+        <div className="status-card">{status}</div>
+      </section>
     </main>
   )
 }
