@@ -12,7 +12,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
-  background: linear-gradient(180deg, #f0e8d8 0%, #c9bfa8 8%, #0b1e3d 55%, #060f1d 100%);
+  background: linear-gradient(180deg, #1D4ED8 0%, #60A5FA 25%, #BFDBFE 45%, #EFF6FF 55%, #ffffff 65%, #f0f7ff 100%);
 }
 
 .app-shell {
@@ -579,11 +579,16 @@ tbody tr:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 24px;
+  justify-content: flex-start;
+  padding: 40px 24px 24px;
+  overflow-y: auto;
 }
 
-.student-form-container {
+.student-view-glass .logo-header {
+  margin-bottom: 8px;
+}
+
+.student-view-glass .student-form-container {
   width: 100%;
   max-width: 460px;
   display: flex;
