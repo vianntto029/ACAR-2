@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { db, collection, addDoc, getDocs, query, where, deleteDoc, doc, onSnapshot, orderBy } from '../firebase'
+import { db, collection, addDoc, getDocs, query, where, deleteDoc, doc, onSnapshot } from '../firebase'
 
 const AttendanceContext = createContext(null)
 
@@ -47,23 +47,26 @@ export function AttendanceProvider({ children }) {
   }, [institutoActivo])
 
   useEffect(() => {
-    const q = query(collection(db, 'institutos', institutoActivo, 'materias'), orderBy('nombre'))
-    const unsub = onSnapshot(q, (snap) => {
-      const data = snap.docs.map(d => ({ ...d.data(), id: d.id }))
-      setMaterias(data)
-    })
+    const unsub = onSnapshot(
+      collection(db, 'institutos', institutoActivo, 'materias'),
+      (snap) => {
+        const data = snap.docs.map(d => ({ ...d.data(), id: d.id }))
+        setMaterias(data)
+      }
+    )
     return () => unsub()
   }, [institutoActivo])
 
   useEffect(() => {
-    const q = query(
+    const unsub = onSnapshot(
       collection(db, 'institutos', institutoActivo, 'attendance'),
-      orderBy('time', 'desc')
+      (snap) => {
+        const data = []
+        snap.forEach(d => data.push({ ...d.data(), id: d.id }))
+        data.sort((a, b) => b.date.localeCompare(a.date) || a.time.localeCompare(b.time))
+        setAttendance(data)
+      }
     )
-    const unsub = onSnapshot(q, (snap) => {
-      const data = snap.docs.map(d => ({ ...d.data(), id: d.id }))
-      setAttendance(data)
-    })
     return () => unsub()
   }, [institutoActivo])
 
