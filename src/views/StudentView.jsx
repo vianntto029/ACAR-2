@@ -89,11 +89,11 @@ return (
               <UserCheck size={20} />
               <span>{institutoNombre}</span>
             </div>
-            <div className="student-materia-header">
+            <div className="student-materia-header" style={{ margin: '8px 0' }}>
               {materiaParam}
             </div>
-            <h1>Registro de Asistencia</h1>
-            <div className="student-form-divider" />
+            <h1 style={{ margin: '8px 0 4px' }}>Registro de Asistencia</h1>
+            <div className="student-form-divider" style={{ margin: '12px 0' }} />
 
             <form className="student-form-glass" onSubmit={handleSubmit}>
               <label>
@@ -106,7 +106,7 @@ return (
                 />
               </label>
               <label>
-                Cedula
+                Numero de Numero de Cedula
                 <input
                   value={form.nationalId}
                   onChange={(e) => setForm((f) => ({ ...f, nationalId: e.target.value }))}

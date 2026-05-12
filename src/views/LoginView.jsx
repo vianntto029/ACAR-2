@@ -30,12 +30,12 @@ export default function LoginView() {
         <h1>Programa ACAR Sabatino</h1>
         <form className="login-form" onSubmit={handleSubmit}>
           <label>
-            Contrasena
+            Contraseña
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Ingresa la contrasena"
+              placeholder="Ingresa tu contrasena"
             />
           </label>
           {error && <div className="status error">Contrasena incorrecta</div>}
