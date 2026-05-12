@@ -194,12 +194,7 @@ export default function AdminView() {
 
   return (
     <main className="admin-shell">
-      <div className="admin-form-area">
-        <div className="logo-header">
-          <img src="/ANAGRAMA FUNDACION.png" alt="Fundacion" className="fundacion-logo" />
-          <img src="/LOGO-ACAR.png" alt="Programa ACAR" className="programa-logo" />
-        </div>
-        <header className="admin-header">
+      <header className="admin-header">
         <h1>Panel de Control - Programa ACAR Sabatino</h1>
         <button className="logout-btn" onClick={logout}>
           <LogOut size={18} />
@@ -358,9 +353,7 @@ export default function AdminView() {
             </tbody>
           </table>
         </div>
-        </section>
-        <div className="status-card">{status}</div>
-      </div>
+      <div className="status-card">{status}</div>
     </main>
   )
 }
