@@ -39,23 +39,10 @@ export function AttendanceProvider({ children }) {
   const [institutoActivo, setInstitutoActivo] = useState(() => {
     return localStorage.getItem('instituto-activo') || INSTITUTOS[0].id
   })
-  const [materias, setMaterias] = useState([])
   const [attendance, setAttendance] = useState([])
 
   useEffect(() => {
     localStorage.setItem('instituto-activo', institutoActivo)
-  }, [institutoActivo])
-
-  useEffect(() => {
-    const materiasRef = ref(db, `institutos/${institutoActivo}/materias`)
-    const unsubscribe = onValue(materiasRef, (snapshot) => {
-      const data = []
-      snapshot.forEach((child) => {
-        data.push({ ...child.val(), id: child.key })
-      })
-      setMaterias(data)
-    })
-    return () => unsubscribe()
   }, [institutoActivo])
 
   useEffect(() => {
@@ -70,18 +57,6 @@ export function AttendanceProvider({ children }) {
     })
     return () => unsubscribe()
   }, [institutoActivo])
-
-  async function addMateria(nombre) {
-    const clean = nombre.trim()
-    if (!clean) return
-    const exists = materias.find(m => m.nombre.toLowerCase() === clean.toLowerCase())
-    if (exists) return
-    await push(ref(db, `institutos/${institutoActivo}/materias`), { nombre: clean })
-  }
-
-  async function deleteMateria(id) {
-    await remove(ref(db, `institutos/${institutoActivo}/materias/${id}`))
-  }
 
   async function checkDuplicate(nationalId, date) {
     const snapshot = await get(ref(db, `institutos/${institutoActivo}/attendance`))
@@ -141,7 +116,6 @@ export function AttendanceProvider({ children }) {
     <AttendanceContext.Provider value={{
       attendance, registerAttendance, resetAttendance,
       switchInstituto, institutoActivo,
-      materias, addMateria, deleteMateria
     }}>
       {children}
     </AttendanceContext.Provider>

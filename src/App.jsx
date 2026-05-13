@@ -1,28 +1,36 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AttendanceProvider } from './context/AttendanceContext'
-import StudentView from './views/StudentView'
-import AdminView from './views/AdminView'
 import LoginView from './views/LoginView'
-
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <StudentView />,
-  },
-  {
-    path: '/login',
-    element: <LoginView />,
-  },
-  {
-    path: '/admin',
-    element: <AdminView />,
-  },
-])
+import RegistroView from './views/RegistroView'
+import Dashboard from './pages/Dashboard'
+import Programas from './pages/Programas'
+import Institutos from './pages/Institutos'
+import Materias from './pages/Materias'
+import Estadisticas from './pages/Estadisticas'
+import Reportes from './pages/Reportes'
+import Ajustes from './pages/Ajustes'
 
 export default function App() {
   return (
     <AttendanceProvider>
-      <RouterProvider router={router} />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<LoginView />} />
+          <Route path="/registro" element={<RegistroView />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/programas" element={<Programas />} />
+          <Route path="/institutos" element={<Institutos />} />
+          <Route path="/materias" element={<Materias />} />
+          <Route path="/estadisticas" element={<Estadisticas />} />
+          <Route path="/reportes" element={<Reportes />} />
+          <Route path="/ajustes" element={<Ajustes />} />
+        </Routes>
+      </BrowserRouter>
     </AttendanceProvider>
   )
 }
+
+window.addEventListener('error', function(e) {
+  console.error('JS Error:', e.error)
+})
