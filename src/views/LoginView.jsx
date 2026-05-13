@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { User, Lock, Mail, AlertCircle } from 'lucide-react'
 
 const ADMIN_PASSWORD = 'acar2026'
@@ -10,27 +9,25 @@ export default function LoginView() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const navigate = useNavigate()
 
   function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
-    console.log('Intentando login con:', user, password)
 
     if (user.trim() === ADMIN_USER && password.trim() === ADMIN_PASSWORD) {
-      console.log('Login exitoso, navegando...')
       localStorage.setItem('admin-auth', 'true')
       window.location.href = '/dashboard'
+    } else if (user.trim() === '' && password.trim() === '') {
+      setError('Ingresa tu usuario y contrasena.')
+      setLoading(false)
     } else {
-      console.log('Credenciales incorrectas')
-      setError('Credenciales incorrectas. Verifica tu usuario y contraseña.')
+      setError('Credenciales incorrectas. Verifica tu usuario y contrasena.')
       setTimeout(() => setError(''), 3000)
       setLoading(false)
     }
   }
 
   function handleGoogleLogin() {
-    console.log('Google login, navegando...')
     localStorage.setItem('admin-auth', 'true')
     window.location.href = '/dashboard'
   }
@@ -48,7 +45,7 @@ export default function LoginView() {
             onClick={handleGoogleLogin}
             className="w-full bg-white text-primary border border-outline-variant py-3 rounded-lg shadow-sm hover:bg-surface transition-all duration-300 flex items-center justify-center gap-3 font-semibold mb-6"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
               <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
@@ -74,7 +71,7 @@ export default function LoginView() {
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-secondary">Usuario Institucional</label>
               <div className="relative group">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant w-5 h-5 group-focus-within:text-primary transition-colors" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant w-5 h-5 group-focus-within:text-primary transition-colors" style={{ top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type="text"
                   value={user}
@@ -88,13 +85,10 @@ export default function LoginView() {
 
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <label className="text-sm font-semibold text-secondary">Contraseña</label>
-                <button type="button" className="text-primary text-xs font-semibold hover:underline bg-transparent border-none p-0 cursor-pointer transition-all">
-                  Restablecer
-                </button>
+                <label className="text-sm font-semibold text-secondary">Contrasena</label>
               </div>
               <div className="relative group">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant w-5 h-5 group-focus-within:text-primary transition-colors" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant w-5 h-5 group-focus-within:text-primary transition-colors" style={{ top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type="password"
                   value={password}
@@ -108,16 +102,17 @@ export default function LoginView() {
 
             <button
               type="submit"
-              className="w-full mt-2 bg-primary text-white py-3.5 rounded-lg shadow-[0_4px_14px_0_rgba(65,116,144,0.39)] hover:shadow-[0_6px_20px_rgba(65,116,144,0.23)] transition-all duration-300 flex items-center justify-center gap-2 font-semibold"
+              disabled={loading}
+              className="w-full mt-2 bg-primary text-white py-3.5 rounded-lg shadow-[0_4px_14px_0_rgba(65,116,144,0.39)] hover:shadow-[0_6px_20px_rgba(65,116,144,0.23)] transition-all duration-300 flex items-center justify-center gap-2 font-semibold disabled:opacity-70"
             >
               <Mail className="w-5 h-5 opacity-80" />
-              Entrar con Correo
+              {loading ? 'Entrando...' : 'Entrar con Correo'}
             </button>
           </form>
         </div>
 
         <p className="text-center text-xs text-white/90 font-semibold mt-8">
-          © 2024 Fundación Mochila de Sueños & Programa ACAR.<br/>Entorno Seguro.
+          &copy; 2024 Fundacion Mochila de Suenos & Programa ACAR.<br/>Entorno Seguro.
         </p>
       </div>
     </div>
