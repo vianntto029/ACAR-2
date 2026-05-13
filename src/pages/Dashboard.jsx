@@ -23,6 +23,7 @@ export default function Dashboard() {
   const [currentInstituto, setCurrentInstituto] = useState('Programa ACAR')
   const [currentPrograma, setCurrentPrograma] = useState('')
   const [isDownloading, setIsDownloading] = useState(false)
+  const [showManualListModal, setShowManualListModal] = useState(false)
 
   const todayAttendance = attendance.filter(a => a.date === today)
   const attendanceCount = todayAttendance.length
@@ -100,7 +101,7 @@ export default function Dashboard() {
     }
   }
 
-  const qrData = `https://acar-asistencia.vercel.app/registro?materia=${encodeURIComponent(currentMateria)}&instituto=${encodeURIComponent(currentInstituto)}`
+  const qrData = `https://acar-2-git-main-vianntto029s-projects.vercel.app/registro?materia=${encodeURIComponent(currentMateria)}&instituto=${encodeURIComponent(currentInstituto)}`
 
   const getInitials = (name) => {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
