@@ -22,6 +22,7 @@ export default function Dashboard() {
   const [currentMateria, setCurrentMateria] = useState('Programa ACAR')
   const [currentInstituto, setCurrentInstituto] = useState('Programa ACAR')
   const [currentPrograma, setCurrentPrograma] = useState('')
+  const [isDownloading, setIsDownloading] = useState(false)
 
   const todayAttendance = attendance.filter(a => a.date === today)
   const attendanceCount = todayAttendance.length
