@@ -1,7 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #417490;
+  --color-primary: #3573A3;
   --color-primary-container: #5B84A1;
   --color-on-primary-container: #e6f4ff;
   --color-secondary: #7197AE;
@@ -39,8 +40,7 @@ html, body {
 }
 
 body {
-  background: linear-gradient(180deg, #FFFFFF 0%, #E9EEF3 14%, #CCD9E1 28%, #ACC2CF 42%, #8EABC0 56%, #7197AE 70%, #5B84A1 84%, #417490 100%);
-  background-attachment: fixed;
+  background: white;
   font-family: var(--font-sans);
   color: var(--color-on-surface);
   min-height: 100vh;

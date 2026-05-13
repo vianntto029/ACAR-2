@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Layout from '../components/Layout'
 import {
   Building, Library, QrCode, Users, Download, User, Check, AlertCircle,
-  RefreshCw, MessageSquare, X, FileText, Plus, Clock, Radio, Calendar
+  RefreshCw, MessageSquare, X, FileText, Radio
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { useAttendance, todayKey } from '../context/AttendanceContext'
@@ -24,6 +24,7 @@ export default function Dashboard() {
   const [currentPrograma, setCurrentPrograma] = useState('')
   const [isDownloading, setIsDownloading] = useState(false)
   const [showManualListModal, setShowManualListModal] = useState(false)
+  const [qrStatus, setQrStatus] = useState('active')
 
   const todayAttendance = attendance.filter(a => a.date === today)
   const attendanceCount = todayAttendance.length
@@ -32,21 +33,16 @@ export default function Dashboard() {
 
   const handleSave = async () => {
     if (!formValue.trim()) return
-    if (activeForm === 'materia') {
-      await push(ref(db, 'Materias'), {
-        name: formValue.trim(),
-        time: '',
-        students: 0,
-        description: '',
-        semestre: new Date().getFullYear().toString(),
-        profesor: '',
-        aula: '',
-        unidadesDeCredito: 3,
-        temario: [],
-      })
-    }
+    if (activeForm === 'instituto') setCurrentInstituto(formValue.trim())
+    if (activeForm === 'materia') setCurrentMateria(formValue.trim())
+    if (activeForm === 'programa') setCurrentPrograma(formValue.trim())
+    setQrStatus('pending')
     setFormValue('')
     setActiveForm(null)
+  }
+
+  const handleGenerate = () => {
+    setQrStatus('active')
   }
 
   const handleCancel = () => {
@@ -173,7 +169,7 @@ export default function Dashboard() {
                   whileHover={{ scale: 1.05, y: -1 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => { setActiveForm('instituto'); setFormValue(currentInstituto) }}
-                  className="bg-primary hover:bg-[#d8629d] text-white px-3.5 py-2 rounded-lg font-semibold flex items-center gap-1.5 transition-all shadow-sm text-sm"
+                  className="bg-[#3573A3] hover:bg-[#d8629d] text-white px-3.5 py-2 rounded-lg font-semibold flex items-center gap-1.5 transition-all shadow-sm text-sm"
                 >
                   <Building className="w-4 h-4" />
                   Agregar Instituto
@@ -182,7 +178,7 @@ export default function Dashboard() {
                   whileHover={{ scale: 1.05, y: -1 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setActiveForm('materia')}
-                  className="bg-primary hover:bg-[#d8629d] text-white px-3.5 py-2 rounded-lg font-semibold flex items-center gap-1.5 transition-all shadow-sm text-sm"
+                  className="bg-[#3573A3] hover:bg-[#d8629d] text-white px-3.5 py-2 rounded-lg font-semibold flex items-center gap-1.5 transition-all shadow-sm text-sm"
                 >
                   <Library className="w-4 h-4" />
                   Agregar Materia
@@ -191,7 +187,7 @@ export default function Dashboard() {
                   whileHover={{ scale: 1.05, y: -1 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setActiveForm('programa')}
-                  className="bg-primary hover:bg-[#d8629d] text-white px-3.5 py-2 rounded-lg font-semibold flex items-center gap-1.5 transition-all shadow-sm text-sm"
+                  className="bg-[#3573A3] hover:bg-[#d8629d] text-white px-3.5 py-2 rounded-lg font-semibold flex items-center gap-1.5 transition-all shadow-sm text-sm"
                 >
                   <Building className="w-4 h-4" />
                   Agregar Programa
@@ -226,23 +222,55 @@ export default function Dashboard() {
               {currentPrograma && <><br />Programa: <strong className="text-primary">{currentPrograma}</strong></>}
             </p>
 
-            <div className="bg-white p-4 rounded-2xl shadow-md border border-surface-variant mb-8 w-48 h-48 flex items-center justify-center relative group hover:shadow-xl transition-shadow duration-300">
-              <QRCodeSVG
-                value={qrData}
-                size={160}
-                level="H"
-                bgColor="#FFFFFF"
-                fgColor="#417490"
-              />
-            </div>
+            <AnimatePresence mode="wait">
+              {qrStatus === 'pending' ? (
+                <motion.div
+                  key="pending"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="flex flex-col items-center justify-center p-6 border border-dashed border-outline-variant rounded-2xl mb-8 w-full min-h-[12rem] bg-surface-variant/30"
+                >
+                  <AlertCircle className="w-8 h-8 text-secondary mb-3 opacity-50" />
+                  <p className="text-primary font-bold mb-4 text-center">Despliegue listo para generar nuevo codigo QR?</p>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleGenerate}
+                    className="bg-[#d8629d] text-white px-5 py-2.5 rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Generar QR
+                  </motion.button>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="active"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="bg-white p-4 rounded-2xl shadow-md border border-surface-variant mb-8 w-48 h-48 flex items-center justify-center relative group hover:shadow-xl transition-shadow duration-300"
+                >
+                  <QRCodeSVG
+                    value={qrData}
+                    size={160}
+                    level="H"
+                    bgColor="#FFFFFF"
+                    fgColor="#3573A3"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            <button
-              onClick={() => window.open(qrData, '_blank')}
-              className="w-full py-4 rounded-xl text-xs tracking-widest uppercase flex justify-center items-center gap-2 font-bold text-white bg-primary shadow-[0_4px_14px_0_rgba(65,116,144,0.39)] hover:shadow-[0_6px_20px_rgba(65,116,144,0.23)] transition-all"
+            <motion.button
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              disabled={qrStatus === 'pending'}
+              className={`w-full py-4 rounded-xl text-xs tracking-widest uppercase flex justify-center items-center gap-2 font-bold text-white transition-all ${qrStatus === 'pending' ? 'bg-outline-variant shadow-none opacity-50 cursor-not-allowed' : 'bg-[#3573A3] shadow-[0_4px_14px_0_rgba(37,91,118,0.39)] hover:shadow-[0_6px_20px_rgba(37,91,118,0.23)]'}`}
             >
               <QrCode className="w-5 h-5" />
-              Ver Registro Publico
-            </button>
+              Abrir Scanner
+            </motion.button>
           </motion.div>
 
           <motion.div
@@ -266,7 +294,7 @@ export default function Dashboard() {
                 initial={{ width: 0 }}
                 animate={{ width: `${percentage}%` }}
                 transition={{ duration: 1, delay: 0.5 }}
-                className="bg-primary h-full rounded-full relative overflow-hidden"
+                className="bg-[#3573A3] h-full rounded-full relative overflow-hidden"
               >
                 <div className="absolute inset-0 bg-white/20 w-full h-full animate-[shimmer_2s_infinite]"></div>
               </motion.div>
@@ -357,34 +385,47 @@ export default function Dashboard() {
                     <th className="py-5 px-6 border-b border-outline-variant/20">Estudiante</th>
                     <th className="py-5 px-6 border-b border-outline-variant/20">Seccion</th>
                     <th className="py-5 px-6 border-b border-outline-variant/20">Hora</th>
-                    <th className="py-5 px-6 border-b border-outline-variant/20">Materia</th>
+                    <th className="py-5 px-6 border-b border-outline-variant/20">FORMATO</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/10 text-sm">
                   {todayAttendance.length > 0 ? (
-                    todayAttendance.map((student, idx) => (
-                      <tr key={student.id} className="hover:bg-primary/5 transition-colors duration-200">
+                    <>
+                      {todayAttendance.map((student, idx) => (
+                        <tr key={student.id} className="hover:bg-primary/5 transition-colors duration-200">
+                          <td className="py-4 px-6 flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-inner border ${getBgClass(idx)}`}>
+                              {getInitials(student.name)}
+                            </div>
+                            <span
+                              className="font-bold text-primary cursor-pointer hover:underline decoration-primary/50 underline-offset-4"
+                              onClick={() => setSelectedStudent(student)}
+                            >
+                              {student.name}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 text-secondary font-medium">{student.seccion}</td>
+                          <td className="py-4 px-6 text-secondary font-medium">{student.time}</td>
+                          <td className="py-4 px-6">
+                            <div className="flex flex-col">
+                              <span className="text-primary font-bold text-xs">{currentMateria}</span>
+                              <span className="text-secondary text-[10px]">{currentInstituto}{currentPrograma ? ` | ${currentPrograma}` : ''}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="hover:bg-primary/5 transition-colors duration-200">
                         <td className="py-4 px-6 flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-inner border ${getBgClass(idx)}`}>
-                            {getInitials(student.name)}
+                          <div className="w-10 h-10 rounded-full bg-surface-variant text-secondary flex items-center justify-center font-bold shadow-inner">
+                            <User className="w-5 h-5" />
                           </div>
-                          <span
-                            className="font-bold text-primary cursor-pointer hover:underline decoration-primary/50 underline-offset-4"
-                            onClick={() => setSelectedStudent(student)}
-                          >
-                            {student.name}
-                          </span>
+                          <span className="text-secondary italic font-medium">Esperando...</span>
                         </td>
-                        <td className="py-4 px-6 text-secondary font-medium">{student.seccion}</td>
-                        <td className="py-4 px-6 text-secondary font-medium">{student.time}</td>
-                        <td className="py-4 px-6">
-                          <div className="flex flex-col">
-                            <span className="text-primary font-bold text-xs">{student.subject}</span>
-                            <span className="text-secondary text-[10px]">{student.instituto}</span>
-                          </div>
-                        </td>
+                        <td className="py-4 px-6 text-secondary font-medium">-</td>
+                        <td className="py-4 px-6 text-secondary font-medium">-</td>
+                        <td className="py-4 px-6 text-secondary font-medium">-</td>
                       </tr>
-                    ))
+                    </>
                   ) : (
                     <tr>
                       <td colSpan={4} className="py-12 text-center text-secondary">
@@ -614,16 +655,15 @@ export default function Dashboard() {
                 </button>
                 <button
                   onClick={() => {
-                    if (observationText.trim()) {
-                      alert('Observacion guardada (simulado)')
-                    }
+                    window.alert('Documento de observaciones exportado (Simulado)')
                     setShowObservationModal(false)
                     setObservationText('')
                   }}
-                  className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 bg-primary text-white hover:opacity-90 shadow-sm transition-all"
+                  disabled={!observationText.trim()}
+                  className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 bg-[#3573A3] text-white hover:opacity-90 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <FileText className="w-4 h-4" />
-                  Guardar Observacion
+                  Exportar Documento
                 </button>
               </div>
             </motion.div>
