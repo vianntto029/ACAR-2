@@ -9,6 +9,7 @@ export default function RegistroView() {
   const { registerAttendance, institutoActivo } = useAttendance()
 
   const urlParams = new URLSearchParams(window.location.search)
+  const isQR = urlParams.has('materia')
   const materiaParam = urlParams.get('materia') || 'Programa ACAR'
 
   const [form, setForm] = useState({
@@ -50,7 +51,9 @@ export default function RegistroView() {
         representante: cleanRep,
       })
       setIsSubmitted(true)
-      setTimeout(() => navigate('/dashboard'), 3000)
+      if (!isQR) {
+        setTimeout(() => navigate('/dashboard'), 3000)
+      }
     } catch (err) {
       if (err.message === 'DUPLICADO') {
         setStatus('Esta cedula ya fue registrada hoy.')
@@ -129,19 +132,30 @@ export default function RegistroView() {
                 >
                   Tu asistencia fue registrada exitosamente.
                 </motion.p>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1 }}
-                  className="flex items-center justify-center gap-2 text-sm text-primary font-semibold"
-                >
+                {!isQR ? (
                   <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full"
-                  />
-                  Redirigiendo al panel de control...
-                </motion.div>
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1 }}
+                    className="flex items-center justify-center gap-2 text-sm text-primary font-semibold"
+                  >
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full"
+                    />
+                    Redirigiendo al panel de control...
+                  </motion.div>
+                ) : (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1 }}
+                    className="text-sm text-secondary font-medium"
+                  >
+                    Puedes cerrar esta ventana.
+                  </motion.p>
+                )}
               </motion.div>
             ) : (
               <motion.form
@@ -222,7 +236,11 @@ export default function RegistroView() {
           </AnimatePresence>
         </div>
 
-        {!materiaParam && (
+        {isQR ? (
+          <p className="text-center text-xs text-white/80 font-semibold mt-6">
+            Solo para registro de asistencia
+          </p>
+        ) : (
           <div className="text-center mt-6">
             <a href="/login" className="text-white/90 text-sm font-semibold hover:text-white transition-colors">
               Panel administrativo

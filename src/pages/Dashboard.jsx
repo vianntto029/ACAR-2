@@ -19,9 +19,15 @@ export default function Dashboard() {
   const [observationText, setObservationText] = useState('')
   const [activeForm, setActiveForm] = useState(null)
   const [formValue, setFormValue] = useState('')
-  const [currentMateria, setCurrentMateria] = useState(() => localStorage.getItem('acar_materia') || 'Programa ACAR')
-  const [currentInstituto, setCurrentInstituto] = useState(() => localStorage.getItem('acar_instituto') || 'Programa ACAR')
-  const [currentPrograma, setCurrentPrograma] = useState(() => localStorage.getItem('acar_programa') || '')
+  const [currentMateria, setCurrentMateria] = useState(() => {
+    const saved = localStorage.getItem('acar_materia'); return saved !== null ? saved : 'Programa ACAR'
+  })
+  const [currentInstituto, setCurrentInstituto] = useState(() => {
+    const saved = localStorage.getItem('acar_instituto'); return saved !== null ? saved : 'Programa ACAR'
+  })
+  const [currentPrograma, setCurrentPrograma] = useState(() => {
+    const saved = localStorage.getItem('acar_programa'); return saved !== null ? saved : ''
+  })
   const [isDownloading, setIsDownloading] = useState(false)
   const [showManualListModal, setShowManualListModal] = useState(false)
   const [showQRModal, setShowQRModal] = useState(false)
