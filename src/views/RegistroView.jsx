@@ -222,11 +222,13 @@ export default function RegistroView() {
           </AnimatePresence>
         </div>
 
-        <div className="text-center mt-6">
-          <a href="/login" className="text-white/90 text-sm font-semibold hover:text-white transition-colors">
-            Panel administrativo
-          </a>
-        </div>
+        {!materiaParam && (
+          <div className="text-center mt-6">
+            <a href="/login" className="text-white/90 text-sm font-semibold hover:text-white transition-colors">
+              Panel administrativo
+            </a>
+          </div>
+        )}
 
         <p className="text-center text-xs text-white/80 font-semibold mt-4">
           Sistema de Gestion Academica Seguro

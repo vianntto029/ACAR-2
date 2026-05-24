@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Layout from '../components/Layout'
 import {
   Building, Library, QrCode, Users, Download, User, Check, AlertCircle,
@@ -19,9 +19,9 @@ export default function Dashboard() {
   const [observationText, setObservationText] = useState('')
   const [activeForm, setActiveForm] = useState(null)
   const [formValue, setFormValue] = useState('')
-  const [currentMateria, setCurrentMateria] = useState('Programa ACAR')
-  const [currentInstituto, setCurrentInstituto] = useState('Programa ACAR')
-  const [currentPrograma, setCurrentPrograma] = useState('')
+  const [currentMateria, setCurrentMateria] = useState(() => localStorage.getItem('acar_materia') || 'Programa ACAR')
+  const [currentInstituto, setCurrentInstituto] = useState(() => localStorage.getItem('acar_instituto') || 'Programa ACAR')
+  const [currentPrograma, setCurrentPrograma] = useState(() => localStorage.getItem('acar_programa') || '')
   const [isDownloading, setIsDownloading] = useState(false)
   const [showManualListModal, setShowManualListModal] = useState(false)
   const [showQRModal, setShowQRModal] = useState(false)
@@ -31,6 +31,10 @@ export default function Dashboard() {
   const [manualList, setManualList] = useState([])
   const [manualStatus, setManualStatus] = useState('')
   const qrLinkRef = useRef(null)
+
+  useEffect(() => { localStorage.setItem('acar_materia', currentMateria) }, [currentMateria])
+  useEffect(() => { localStorage.setItem('acar_instituto', currentInstituto) }, [currentInstituto])
+  useEffect(() => { localStorage.setItem('acar_programa', currentPrograma) }, [currentPrograma])
 
   const todayAttendance = attendance.filter(a => a.date === today)
   const attendanceCount = todayAttendance.length
@@ -122,42 +126,51 @@ export default function Dashboard() {
 
   const handleDownload = async () => {
     setIsDownloading(true)
-    const workbook = new ExcelJS.Workbook()
-    workbook.creator = 'ACAR'
-    workbook.created = new Date()
+    try {
+      const workbook = new ExcelJS.Workbook()
+      workbook.creator = 'ACAR'
+      workbook.created = new Date()
 
-    const sheet = workbook.addWorksheet('Asistencia')
-    sheet.columns = [
-      { header: 'Nombre', key: 'name', width: 25 },
-      { header: 'Cedula', key: 'nationalId', width: 15 },
-      { header: 'Seccion', key: 'seccion', width: 15 },
-      { header: 'Materia', key: 'subject', width: 25 },
-      { header: 'Representante', key: 'representante', width: 25 },
-      { header: 'Hora', key: 'time', width: 12 },
-      { header: 'Fecha', key: 'date', width: 12 },
-    ]
+      const sheet = workbook.addWorksheet('Asistencia')
+      sheet.columns = [
+        { header: 'Nombre', key: 'name', width: 30 },
+        { header: 'Cedula', key: 'nationalId', width: 18 },
+        { header: 'Seccion', key: 'seccion', width: 15 },
+        { header: 'Materia', key: 'subject', width: 25 },
+        { header: 'Representante', key: 'representante', width: 30 },
+        { header: 'Hora', key: 'time', width: 15 },
+        { header: 'Fecha', key: 'date', width: 15 },
+      ]
 
-    todayAttendance.forEach(a => {
-      sheet.addRow({
-        name: a.name,
-        nationalId: a.nationalId,
-        seccion: a.seccion,
-        subject: a.subject,
-        representante: a.representante || '',
-        time: a.time,
-        date: a.date,
+      todayAttendance.forEach(a => {
+        sheet.addRow({
+          name: a.name,
+          nationalId: a.nationalId,
+          seccion: a.seccion,
+          subject: a.subject,
+          representante: a.representante || '',
+          time: a.time,
+          date: a.date,
+        })
       })
-    })
 
-    const buffer = await workbook.xlsx.writeBuffer()
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `ACAR_Asistencia_${today}.xlsx`
-    a.click()
-    URL.revokeObjectURL(url)
+      sheet.getRow(1).font = { bold: true, size: 11 }
+      sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3573A3' } }
+      sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
 
+      const buf = await workbook.xlsx.writeBuffer()
+      const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `ACAR_Asistencia_${today}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
+    } catch (err) {
+      console.error('Excel error:', err)
+    }
     setTimeout(() => setIsDownloading(false), 1500)
   }
 
