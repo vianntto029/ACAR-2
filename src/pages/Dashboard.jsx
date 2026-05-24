@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Layout from '../components/Layout'
 import {
   Building, Library, QrCode, Users, Download, User, Check, AlertCircle,
-  RefreshCw, MessageSquare, X, FileText, Radio
+  RefreshCw, MessageSquare, X, FileText, Radio, Copy, ExternalLink
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { useAttendance, todayKey } from '../context/AttendanceContext'
@@ -25,6 +25,11 @@ export default function Dashboard() {
   const [isDownloading, setIsDownloading] = useState(false)
   const [showManualListModal, setShowManualListModal] = useState(false)
   const [qrStatus, setQrStatus] = useState('active')
+  const [manualName, setManualName] = useState('')
+  const [manualSeccion, setManualSeccion] = useState('')
+  const [manualList, setManualList] = useState([])
+  const [manualStatus, setManualStatus] = useState('')
+  const qrLinkRef = useRef(null)
 
   const todayAttendance = attendance.filter(a => a.date === today)
   const attendanceCount = todayAttendance.length
@@ -48,6 +53,71 @@ export default function Dashboard() {
   const handleCancel = () => {
     setFormValue('')
     setActiveForm(null)
+  }
+
+  const handleResetMateria = () => {
+    setCurrentMateria('')
+    setQrStatus('pending')
+  }
+
+  const handleResetInstituto = () => {
+    setCurrentInstituto('')
+    setQrStatus('pending')
+  }
+
+  const handleResetPrograma = () => {
+    setCurrentPrograma('')
+    setQrStatus('pending')
+  }
+
+  const handleOpenQR = () => {
+    if (qrStatus === 'pending') return
+    const qrUrl = `https://acar-2-git-main-vianntto029s-projects.vercel.app/qr-view?data=${encodeURIComponent(qrData)}`
+    window.open(qrUrl, '_blank', 'width=500,height=600')
+    navigator.clipboard.writeText(qrData)
+  }
+
+  const handleAddToManualList = () => {
+    if (!manualName.trim() || !manualSeccion.trim()) {
+      setManualStatus('Completa nombre y seccion.')
+      return
+    }
+    setManualList(prev => [...prev, {
+      id: Date.now().toString(),
+      name: manualName.trim(),
+      seccion: manualSeccion.trim(),
+    }])
+    setManualName('')
+    setManualSeccion('')
+    setManualStatus(`${manualList.length + 1} estudiante(s) agregado(s)`)
+  }
+
+  const handleSaveManualList = async () => {
+    if (manualList.length === 0) return
+    setManualStatus('Guardando...')
+    try {
+      for (const student of manualList) {
+        await push(ref(db, `institutos/ACAR/attendance`), {
+          name: student.name,
+          subject: currentMateria || 'Programa ACAR',
+          nationalId: 'MANUAL-' + student.id,
+          seccion: student.seccion,
+          representante: '',
+          date: today,
+          time: new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false }),
+          code: `ACAR-${today}`,
+          instituto: currentInstituto || 'Programa ACAR',
+        })
+      }
+      setManualStatus(`${manualList.length} estudiante(s) registrado(s) en Firebase`)
+      setManualList([])
+      setTimeout(() => {
+        setShowManualListModal(false)
+        setManualStatus('')
+      }, 1500)
+    } catch (err) {
+      setManualStatus('Error al guardar: ' + err.message)
+    }
   }
 
   const handleDownload = async () => {
@@ -174,6 +244,17 @@ export default function Dashboard() {
                   <Building className="w-4 h-4" />
                   Agregar Instituto
                 </motion.button>
+                {currentInstituto && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleResetInstituto}
+                    className="bg-red-50 hover:bg-red-100 border border-red-200 text-red-500 px-2 py-2 rounded-lg transition-all shadow-sm text-sm"
+                    title="Reiniciar instituto"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </motion.button>
+                )}
                 <motion.button
                   whileHover={{ scale: 1.05, y: -1 }}
                   whileTap={{ scale: 0.95 }}
@@ -183,6 +264,17 @@ export default function Dashboard() {
                   <Library className="w-4 h-4" />
                   Agregar Materia
                 </motion.button>
+                {currentMateria !== 'Programa ACAR' && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleResetMateria}
+                    className="bg-red-50 hover:bg-red-100 border border-red-200 text-red-500 px-2 py-2 rounded-lg transition-all shadow-sm text-sm"
+                    title="Reiniciar materia"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </motion.button>
+                )}
                 <motion.button
                   whileHover={{ scale: 1.05, y: -1 }}
                   whileTap={{ scale: 0.95 }}
@@ -192,6 +284,17 @@ export default function Dashboard() {
                   <Building className="w-4 h-4" />
                   Agregar Programa
                 </motion.button>
+                {currentPrograma && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleResetPrograma}
+                    className="bg-red-50 hover:bg-red-100 border border-red-200 text-red-500 px-2 py-2 rounded-lg transition-all shadow-sm text-sm"
+                    title="Reiniciar programa"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </motion.button>
+                )}
                 <motion.button
                   whileHover={{ scale: 1.05, y: -1 }}
                   whileTap={{ scale: 0.95 }}
@@ -266,10 +369,11 @@ export default function Dashboard() {
               whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
               disabled={qrStatus === 'pending'}
+              onClick={handleOpenQR}
               className={`w-full py-4 rounded-xl text-xs tracking-widest uppercase flex justify-center items-center gap-2 font-bold text-white transition-all ${qrStatus === 'pending' ? 'bg-outline-variant shadow-none opacity-50 cursor-not-allowed' : 'bg-[#3573A3] shadow-[0_4px_14px_0_rgba(37,91,118,0.39)] hover:shadow-[0_6px_20px_rgba(37,91,118,0.23)]'}`}
             >
               <QrCode className="w-5 h-5" />
-              Abrir Scanner
+              Codigo QR
             </motion.button>
           </motion.div>
 
@@ -520,41 +624,83 @@ export default function Dashboard() {
                 </button>
               </div>
               <div className="p-8 flex-1 overflow-y-auto bg-surface/30">
-                <div className="border-2 border-dashed border-outline-variant rounded-2xl p-12 flex flex-col items-center justify-center text-center bg-white mb-6">
-                  <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4">
-                    <Download className="w-8 h-8" />
+                {manualStatus && (
+                  <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-4 text-sm font-medium">
+                    <AlertCircle className="w-4 h-4" />
+                    {manualStatus}
                   </div>
-                  <h3 className="font-bold text-lg text-primary mb-2">Importar Archivo CSV o Excel</h3>
-                  <p className="text-secondary text-sm max-w-md mx-auto mb-6">Arrastra y suelta tu archivo aqui o haz clic para seleccionarlo de tu dispositivo.</p>
-                  <button className="bg-primary text-white font-bold px-6 py-3 rounded-xl hover:bg-primary/90 transition-colors shadow-sm">
-                    Seleccionar Archivo
-                  </button>
+                )}
+
+                <h4 className="font-bold text-primary mb-4">Agregar Estudiante Manualmente</h4>
+                <div className="bg-white p-4 rounded-2xl border border-surface-variant shadow-sm mb-6">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="text"
+                      placeholder="Nombre completo"
+                      value={manualName}
+                      onChange={(e) => setManualName(e.target.value)}
+                      className="flex-1 bg-surface-variant/50 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium"
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddToManualList()}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Seccion"
+                      value={manualSeccion}
+                      onChange={(e) => setManualSeccion(e.target.value)}
+                      className="w-full sm:w-48 bg-surface-variant/50 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium"
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddToManualList()}
+                    />
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleAddToManualList}
+                      className="bg-[#3573A3] hover:bg-[#d8629d] text-white font-bold px-6 rounded-xl transition-all"
+                    >
+                      Agregar
+                    </motion.button>
+                  </div>
                 </div>
 
-                <h4 className="font-bold text-primary mb-4">Ingreso Manual</h4>
-                <div className="bg-white p-4 rounded-2xl border border-surface-variant shadow-sm mb-4">
-                  <div className="flex gap-4">
-                    <input type="text" placeholder="Nombre completo" className="flex-1 bg-surface-variant/50 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium" />
-                    <input type="text" placeholder="Seccion" className="w-48 bg-surface-variant/50 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium" />
-                    <button className="bg-surface-variant hover:bg-outline-variant text-primary font-bold px-6 rounded-xl transition-colors">
-                      Agregar
-                    </button>
+                {manualList.length > 0 && (
+                  <div className="bg-white rounded-2xl border border-surface-variant shadow-sm overflow-hidden mb-4">
+                    <div className="p-4 border-b border-surface-variant bg-surface/50">
+                      <h4 className="font-bold text-primary">Lista Temporal ({manualList.length} estudiante(s))</h4>
+                    </div>
+                    <div className="divide-y divide-surface-variant/50 max-h-48 overflow-y-auto">
+                      {manualList.map((student) => (
+                        <div key={student.id} className="flex justify-between items-center px-4 py-3">
+                          <div>
+                            <span className="font-semibold text-primary">{student.name}</span>
+                            <span className="text-secondary text-sm ml-2">- {student.seccion}</span>
+                          </div>
+                          <button
+                            onClick={() => setManualList(prev => prev.filter(s => s.id !== student.id))}
+                            className="text-red-400 hover:text-red-600 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               <div className="p-6 border-t border-surface-variant bg-surface flex justify-end gap-3">
                 <button
-                  onClick={() => setShowManualListModal(false)}
+                  onClick={() => { setShowManualListModal(false); setManualList([]); setManualStatus('') }}
                   className="px-6 py-2.5 rounded-xl font-bold text-secondary hover:bg-surface-variant transition-colors"
                 >
                   Descartar
                 </button>
-                <button
-                  onClick={() => setShowManualListModal(false)}
-                  className="px-6 py-2.5 rounded-xl font-bold bg-[#d8629d] text-white hover:opacity-90 shadow-sm transition-opacity"
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleSaveManualList}
+                  disabled={manualList.length === 0}
+                  className="px-6 py-2.5 rounded-xl font-bold bg-[#d8629d] text-white hover:opacity-90 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Guardar Lista
-                </button>
+                  Guardar Lista en Firebase
+                </motion.button>
               </div>
             </motion.div>
           </motion.div>

@@ -1,16 +1,32 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Layout from '../components/Layout'
-import { Settings, User, Bell, Shield, Paintbrush } from 'lucide-react'
+import { Settings, User, Bell, Shield, Paintbrush, Camera, Phone, Building, Briefcase } from 'lucide-react'
 import { motion } from 'motion/react'
+
+const STORAGE_KEY = 'acar-profile'
+
+const defaultProfile = {
+  nombres: 'Administrador',
+  apellidos: 'ACAR',
+  email: 'admin@acar.edu.co',
+  telefono: '',
+  cargo: '',
+  institucion: 'Fundacion Mochila de Suenos',
+  avatar: '',
+}
 
 export default function Ajustes() {
   const [activeTab, setActiveTab] = useState('perfil')
-  const [profile, setProfile] = useState({
-    nombres: 'Administrador',
-    apellidos: 'ACAR',
-    email: 'admin@acar.edu.co',
+  const [profile, setProfile] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    return saved ? JSON.parse(saved) : defaultProfile
   })
   const [saved, setSaved] = useState(false)
+  const fileInputRef = useRef(null)
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(profile))
+  }, [profile])
 
   const tabs = [
     { id: 'perfil', icon: User, label: 'Perfil de Usuario' },
@@ -20,8 +36,24 @@ export default function Ajustes() {
   ]
 
   const handleSave = () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(profile))
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
+  }
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      setProfile((prev) => ({ ...prev, avatar: ev.target.result }))
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleResetProfile = () => {
+    setProfile(defaultProfile)
+    localStorage.removeItem(STORAGE_KEY)
   }
 
   return (
@@ -67,15 +99,34 @@ export default function Ajustes() {
             {activeTab === 'perfil' && (
               <div>
                 <div className="flex items-center gap-4 mb-8">
-                  <div className="w-20 h-20 rounded-2xl bg-primary text-white flex items-center justify-center font-bold text-2xl shadow-md">
-                    {profile.nombres[0]}{profile.apellidos[0]}
+                  <div className="relative group">
+                    {profile.avatar ? (
+                      <img src={profile.avatar} alt="Avatar" className="w-20 h-20 rounded-2xl object-cover shadow-md" />
+                    ) : (
+                      <div className="w-20 h-20 rounded-2xl bg-primary text-white flex items-center justify-center font-bold text-2xl shadow-md">
+                        {profile.nombres[0]}{profile.apellidos[0]}
+                      </div>
+                    )}
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white shadow-md border border-primary/20 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all"
+                    >
+                      <Camera className="w-4 h-4" />
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleAvatarChange}
+                    />
                   </div>
                   <div>
                     <h2 className="text-2xl font-heading font-bold text-primary">
                       {profile.nombres} {profile.apellidos}
                     </h2>
                     <p className="text-secondary font-medium">{profile.email}</p>
-                    <button className="text-sm font-bold text-primary mt-1 hover:underline">Cambiar foto</button>
+                    {profile.cargo && <p className="text-sm text-primary font-semibold">{profile.cargo}</p>}
                   </div>
                 </div>
 
@@ -101,6 +152,48 @@ export default function Ajustes() {
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-secondary">
+                        <Phone className="w-3.5 h-3.5 inline mr-1" />
+                        Telefono
+                      </label>
+                      <input
+                        type="text"
+                        value={profile.telefono}
+                        onChange={(e) => setProfile({ ...profile, telefono: e.target.value })}
+                        placeholder="+57 300 000 0000"
+                        className="w-full bg-white/70 border border-white/60 rounded-lg p-3 text-primary shadow-sm focus:border-primary outline-none"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-secondary">
+                        <Briefcase className="w-3.5 h-3.5 inline mr-1" />
+                        Cargo
+                      </label>
+                      <input
+                        type="text"
+                        value={profile.cargo}
+                        onChange={(e) => setProfile({ ...profile, cargo: e.target.value })}
+                        placeholder="Administrador"
+                        className="w-full bg-white/70 border border-white/60 rounded-lg p-3 text-primary shadow-sm focus:border-primary outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold text-secondary">
+                      <Building className="w-3.5 h-3.5 inline mr-1" />
+                      Institucion
+                    </label>
+                    <input
+                      type="text"
+                      value={profile.institucion}
+                      onChange={(e) => setProfile({ ...profile, institucion: e.target.value })}
+                      className="w-full bg-white/70 border border-white/60 rounded-lg p-3 text-primary shadow-sm focus:border-primary outline-none"
+                    />
+                  </div>
+
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold text-secondary">Correo Electronico</label>
                     <input
@@ -111,7 +204,10 @@ export default function Ajustes() {
                     />
                   </div>
 
-                  <div className="pt-4 flex justify-end">
+                  <div className="pt-4 flex justify-between items-center">
+                    <button onClick={handleResetProfile} className="text-sm text-red-500 hover:text-red-700 font-semibold transition-colors">
+                      Restablecer perfil
+                    </button>
                     <motion.button
                       whileHover={{ scale: 1.02, y: -2 }}
                       whileTap={{ scale: 0.98 }}

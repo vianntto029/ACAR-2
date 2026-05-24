@@ -9,6 +9,10 @@ import Materias from './pages/Materias'
 import Estadisticas from './pages/Estadisticas'
 import Reportes from './pages/Reportes'
 import Ajustes from './pages/Ajustes'
+import Calendario from './pages/Calendario'
+import BaseDatos from './pages/BaseDatos'
+import Tablero from './pages/Tablero'
+import Notas from './pages/Notas'
 
 export default function App() {
   return (
@@ -25,6 +29,10 @@ export default function App() {
           <Route path="/estadisticas" element={<Estadisticas />} />
           <Route path="/reportes" element={<Reportes />} />
           <Route path="/ajustes" element={<Ajustes />} />
+          <Route path="/calendario" element={<Calendario />} />
+          <Route path="/basedatos" element={<BaseDatos />} />
+          <Route path="/tablero" element={<Tablero />} />
+          <Route path="/notas" element={<Notas />} />
         </Routes>
       </BrowserRouter>
     </AttendanceProvider>

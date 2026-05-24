@@ -171,10 +171,10 @@ export default function Layout({ children }) {
           </div>
           <nav className="hidden lg:flex items-center gap-8 h-full">
             <NavLink to="/dashboard" className={({ isActive }) => `font-bold h-full flex items-center transition-colors uppercase tracking-wide text-sm ${isActive ? 'text-primary border-b-2 border-primary' : 'text-secondary hover:text-primary'}`}>PANEL DE CONTROL</NavLink>
-            <NavLink to="/programas" className={({ isActive }) => `font-bold h-full flex items-center transition-colors uppercase tracking-wide text-sm ${isActive ? 'text-primary border-b-2 border-primary' : 'text-secondary hover:text-primary'}`}>PROGRAMAS</NavLink>
-            <NavLink to="/institutos" className={({ isActive }) => `font-bold h-full flex items-center transition-colors uppercase tracking-wide text-sm ${isActive ? 'text-primary border-b-2 border-primary' : 'text-secondary hover:text-primary'}`}>INSTITUCIONES | CONVENIO</NavLink>
-            <NavLink to="/materias" className={({ isActive }) => `font-bold h-full flex items-center transition-colors uppercase tracking-wide text-sm ${isActive ? 'text-primary border-b-2 border-primary' : 'text-secondary hover:text-primary'}`}>MATERIAS</NavLink>
-            <NavLink to="/reportes" className={({ isActive }) => `font-bold h-full flex items-center transition-colors uppercase tracking-wide text-sm ${isActive ? 'text-primary border-b-2 border-primary' : 'text-secondary hover:text-primary'}`}>REPORTES</NavLink>
+            <NavLink to="/calendario" className={({ isActive }) => `font-bold h-full flex items-center transition-colors uppercase tracking-wide text-sm ${isActive ? 'text-primary border-b-2 border-primary' : 'text-secondary hover:text-primary'}`}>CALENDARIO</NavLink>
+            <NavLink to="/basedatos" className={({ isActive }) => `font-bold h-full flex items-center transition-colors uppercase tracking-wide text-sm ${isActive ? 'text-primary border-b-2 border-primary' : 'text-secondary hover:text-primary'}`}>BASE DE DATOS</NavLink>
+            <NavLink to="/tablero" className={({ isActive }) => `font-bold h-full flex items-center transition-colors uppercase tracking-wide text-sm ${isActive ? 'text-primary border-b-2 border-primary' : 'text-secondary hover:text-primary'}`}>TABLERO</NavLink>
+            <NavLink to="/notas" className={({ isActive }) => `font-bold h-full flex items-center transition-colors uppercase tracking-wide text-sm ${isActive ? 'text-primary border-b-2 border-primary' : 'text-secondary hover:text-primary'}`}>NOTAS</NavLink>
           </nav>
           <div className="flex items-center gap-4 text-primary">
             <div className="hidden md:flex items-center gap-2 px-4 py-1.5 bg-surface-variant/50 rounded-full font-bold text-sm text-[#3573A3]">
