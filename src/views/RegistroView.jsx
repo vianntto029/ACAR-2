@@ -6,11 +6,10 @@ import { useAttendance } from '../context/AttendanceContext'
 
 export default function RegistroView() {
   const navigate = useNavigate()
-  const { registerAttendance } = useAttendance()
+  const { registerAttendance, institutoActivo } = useAttendance()
 
   const urlParams = new URLSearchParams(window.location.search)
   const materiaParam = urlParams.get('materia') || 'Programa ACAR'
-  const institutoQR = urlParams.get('instituto')
 
   const [form, setForm] = useState({
     name: '',
@@ -49,7 +48,6 @@ export default function RegistroView() {
         nationalId: cleanId,
         seccion: cleanSeccion,
         representante: cleanRep,
-        instituto: institutoQR || 'Programa ACAR',
       })
       setIsSubmitted(true)
       setTimeout(() => navigate('/dashboard'), 3000)

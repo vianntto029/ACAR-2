@@ -60,7 +60,7 @@ export default function Layout({ children }) {
           whileHover={{ scale: 1.02, y: -2 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => navigate('/registro')}
-          className="w-full py-3.5 rounded-xl text-xs flex justify-center items-center gap-2 mb-6 tracking-widest uppercase font-bold bg-[#a2d2b2] text-white shadow-[0_4px_14px_0_rgba(162,210,178,0.39)] hover:shadow-[0_6px_20px_rgba(162,210,178,0.3)] transition-all duration-300"
+          className="w-full py-3.5 rounded-xl text-xs flex justify-center items-center gap-2 mb-6 tracking-widest uppercase font-bold bg-[#a2d2b2] text-white shadow-[0_4px_14px_0_rgba(130,180,150,0.3)] hover:shadow-[0_6px_20px_rgba(130,180,150,0.25)] transition-all duration-300"
         >
           <Plus className="w-4 h-4 text-white" />
           <span className="text-white">Nuevo Registro</span>
@@ -192,6 +192,7 @@ export default function Layout({ children }) {
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
+              onClick={() => navigate('/ajustes')}
               className="p-2 rounded-full hover:bg-surface-variant/50 transition-colors"
             >
               <User className="w-5 h-5" />
@@ -251,7 +252,7 @@ export default function Layout({ children }) {
                 onClick={() => { navigate('/registro'); setMobileMenuOpen(false) }}
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full py-3 rounded-xl text-xs flex justify-center items-center gap-2 mb-4 tracking-widest uppercase font-bold bg-[#a2d2b2] text-white shadow-md transition-all"
+                className="w-full py-3 rounded-xl text-xs flex justify-center items-center gap-2 mb-4 tracking-widest uppercase font-bold bg-[#a2d2b2] text-white shadow-[0_4px_12px_0_rgba(130,180,150,0.25)] transition-all"
               >
                 <Plus className="w-4 h-4" />
                 <span className="text-white">Nuevo Registro</span>

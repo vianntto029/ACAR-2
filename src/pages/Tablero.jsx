@@ -1,6 +1,6 @@
 import Layout from '../components/Layout'
 import { Plus, X, GripVertical } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 
 const initialColumns = {
@@ -10,7 +10,7 @@ const initialColumns = {
 }
 
 export default function Tablero() {
-  const [columns, setColumns] = useState(initialColumns)
+  const [columns] = useState(initialColumns)
   const [cards, setCards] = useState({
     'por-hacer': [
       { id: '1', title: 'Planificar clase de matemáticas', desc: 'Preparar ejercicios y material didáctico' },
@@ -25,7 +25,9 @@ export default function Tablero() {
   })
   const [showModal, setShowModal] = useState(false)
   const [newCard, setNewCard] = useState({ title: '', desc: '', column: 'por-hacer' })
-  const [dragging, setDragging] = useState(null)
+  const [dragState, setDragState] = useState(null)
+  const [dropTarget, setDropTarget] = useState(null)
+  const dragNodeRef = useRef(null)
 
   const handleAddCard = () => {
     if (!newCard.title) return
@@ -39,15 +41,81 @@ export default function Tablero() {
     setCards(prev => ({ ...prev, [colId]: prev[colId].filter(c => c.id !== cardId) }))
   }
 
-  const moveCard = (cardId, fromCol, toCol) => {
-    if (!toCol || fromCol === toCol) return
-    const card = cards[fromCol]?.find(c => c.id === cardId)
-    if (!card) return
+  const moveCard = (cardId, fromCol, toCol, toIndex) => {
+    const sourceCards = [...(cards[fromCol] || [])]
+    const cardIdx = sourceCards.findIndex(c => c.id === cardId)
+    if (cardIdx === -1) return
+    const [movedCard] = sourceCards.splice(cardIdx, 1)
+
+    const targetCards = toCol === fromCol ? sourceCards : [...(cards[toCol] || [])]
+    const insertAt = toCol === fromCol
+      ? (toIndex > cardIdx ? toIndex - 1 : toIndex)
+      : (toIndex ?? targetCards.length)
+
+    targetCards.splice(insertAt, 0, movedCard)
+
     setCards(prev => ({
       ...prev,
-      [fromCol]: prev[fromCol].filter(c => c.id !== cardId),
-      [toCol]: [...(prev[toCol] || []), card],
+      [fromCol]: toCol === fromCol ? targetCards : sourceCards,
+      [toCol]: toCol === fromCol ? targetCards : targetCards,
     }))
+  }
+
+  const handleDragStart = (e, cardId, colId) => {
+    dragNodeRef.current = e.target
+    setDragState({ cardId, fromCol: colId })
+    e.dataTransfer.effectAllowed = 'move'
+    setTimeout(() => {
+      if (e.target) e.target.style.opacity = '0.4'
+    }, 0)
+  }
+
+  const handleDragEnd = (e) => {
+    if (dragNodeRef.current) dragNodeRef.current.style.opacity = '1'
+    dragNodeRef.current = null
+    setDragState(null)
+    setDropTarget(null)
+  }
+
+  const handleDragOver = (e, colId) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+
+    const colEl = e.currentTarget
+    const cardEls = colEl.querySelectorAll('[data-card-id]')
+    let insertIndex = cardEls.length
+
+    for (let i = 0; i < cardEls.length; i++) {
+      const rect = cardEls[i].getBoundingClientRect()
+      const midY = rect.top + rect.height / 2
+      if (e.clientY < midY) {
+        insertIndex = i
+        break
+      }
+    }
+
+    setDropTarget({ colId, index: insertIndex, cardId: cardEls[insertIndex]?.getAttribute('data-card-id') || null })
+  }
+
+  const handleDragLeave = (e, colId) => {
+    if (dropTarget?.colId === colId && !e.currentTarget.contains(e.relatedTarget)) {
+      setDropTarget(prev => prev?.colId === colId ? null : prev)
+    }
+  }
+
+  const handleDrop = (e, colId) => {
+    e.preventDefault()
+    if (!dragState) return
+    const sourceCards = cards[dragState.fromCol]
+    const cardExists = sourceCards?.some(c => c.id === dragState.cardId)
+    if (!cardExists) return
+
+    const dropIdx = dropTarget?.colId === colId ? dropTarget.index : (cards[colId]?.length || 0)
+    moveCard(dragState.cardId, dragState.fromCol, colId, dropIdx)
+    if (dragNodeRef.current) dragNodeRef.current.style.opacity = '1'
+    dragNodeRef.current = null
+    setDragState(null)
+    setDropTarget(null)
   }
 
   return (
@@ -55,7 +123,7 @@ export default function Tablero() {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-between items-center mb-6">
         <div>
           <h1 className="font-heading text-4xl lg:text-5xl font-bold text-primary tracking-tight">TABLERO KANBAN</h1>
-          <p className="text-secondary mt-2 font-medium">Planificación estratégica y organización</p>
+          <p className="text-secondary mt-2 font-medium">Planificaci&oacute;n estrat&eacute;gica y organizaci&oacute;n</p>
         </div>
         <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setShowModal(true)} className="bg-[#3573A3] hover:bg-[#d8629d] text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm">
           <Plus className="w-5 h-5" /> Nueva Tarea
@@ -64,52 +132,79 @@ export default function Tablero() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {Object.values(columns).map(col => (
-          <div key={col.id} className="glass-panel-solid rounded-[2rem] p-4 shadow-lg">
+          <div
+            key={col.id}
+            className={`glass-panel-solid rounded-[2rem] p-4 shadow-lg transition-shadow ${dragState && dropTarget?.colId === col.id ? 'shadow-[0_0_0_2px_#3573A3]' : ''}`}
+          >
             <div className={`p-3 rounded-xl mb-4 ${col.color} border`}>
               <h3 className="font-bold text-primary text-center">{col.title}</h3>
               <p className="text-center text-xs text-secondary">{cards[col.id]?.length || 0} tareas</p>
             </div>
-            <div className="space-y-3 min-h-[200px]">
+            <div
+              className="space-y-3 min-h-[200px]"
+              onDragOver={(e) => handleDragOver(e, col.id)}
+              onDragLeave={(e) => handleDragLeave(e, col.id)}
+              onDrop={(e) => handleDrop(e, col.id)}
+            >
               <AnimatePresence>
-                {(cards[col.id] || []).map(card => (
-                  <motion.div
-                    key={card.id}
-                    layout
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    className="bg-white rounded-xl p-4 shadow-sm border border-surface-variant cursor-grab active:cursor-grabbing group"
-                    draggable
-                    onDragStart={() => setDragging({ cardId: card.id, fromCol: col.id })}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={() => { if (dragging) moveCard(dragging.cardId, dragging.fromCol, col.id); setDragging(null) }}
-                  >
-                    <div className="flex justify-between items-start gap-2">
-                      <div className="flex-1">
-                        <h4 className="font-bold text-primary text-sm">{card.title}</h4>
-                        {card.desc && <p className="text-xs text-secondary mt-1">{card.desc}</p>}
-                      </div>
-                      <button onClick={() => handleDeleteCard(col.id, card.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all">
-                        <X className="w-4 h-4" />
-                      </button>
+                {(cards[col.id] || []).map((card, idx) => {
+                  const isDragSource = dragState?.cardId === card.id
+                  const hasDropAbove = dropTarget?.colId === col.id && dropTarget?.index === idx
+                  return (
+                    <div key={card.id}>
+                      {hasDropAbove && (
+                        <div className="flex items-center gap-2 py-1">
+                          <div className="flex-1 h-1 bg-primary/40 rounded-full" />
+                          <div className="w-2 h-2 rounded-full bg-primary" />
+                          <div className="flex-1 h-1 bg-primary/40 rounded-full" />
+                        </div>
+                      )}
+                      <motion.div
+                        layout
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: isDragSource ? 0.4 : 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        data-card-id={card.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, card.id, col.id)}
+                        onDragEnd={handleDragEnd}
+                        className="bg-white rounded-xl p-4 shadow-sm border border-surface-variant cursor-grab active:cursor-grabbing group hover:shadow-md hover:border-primary/30 transition-all"
+                      >
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="flex-1">
+                            <h4 className="font-bold text-primary text-sm">{card.title}</h4>
+                            {card.desc && <p className="text-xs text-secondary mt-1">{card.desc}</p>}
+                          </div>
+                          <button onClick={() => handleDeleteCard(col.id, card.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all flex-shrink-0">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="flex gap-1 mt-2">
+                          {col.id !== 'por-hacer' && (
+                            <button onClick={() => moveCard(card.id, col.id, 'por-hacer', cards['por-hacer']?.length || 0)} className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">←</button>
+                          )}
+                          {col.id === 'por-hacer' && (
+                            <button onClick={() => moveCard(card.id, col.id, 'en-progreso', cards['en-progreso']?.length || 0)} className="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors">Iniciar</button>
+                          )}
+                          {col.id === 'en-progreso' && (
+                            <button onClick={() => moveCard(card.id, col.id, 'completado', cards['completado']?.length || 0)} className="text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-600 hover:bg-green-200 transition-colors">Completar</button>
+                          )}
+                          {col.id === 'completado' && (
+                            <button onClick={() => moveCard(card.id, col.id, 'en-progreso', cards['en-progreso']?.length || 0)} className="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors">Reabrir</button>
+                          )}
+                        </div>
+                      </motion.div>
                     </div>
-                    <div className="flex gap-1 mt-2">
-                      {col.id !== 'por-hacer' && (
-                        <button onClick={() => moveCard(card.id, col.id, 'por-hacer')} className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">←</button>
-                      )}
-                      {col.id === 'por-hacer' && (
-                        <button onClick={() => moveCard(card.id, col.id, 'en-progreso')} className="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors">Iniciar</button>
-                      )}
-                      {col.id === 'en-progreso' && (
-                        <button onClick={() => moveCard(card.id, col.id, 'completado')} className="text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-600 hover:bg-green-200 transition-colors">Completar</button>
-                      )}
-                      {col.id === 'completado' && (
-                        <button onClick={() => moveCard(card.id, col.id, 'en-progreso')} className="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors">Reabrir</button>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
+                  )
+                })}
               </AnimatePresence>
+              {dropTarget?.colId === col.id && dropTarget?.index >= (cards[col.id]?.length || 0) && (
+                <div className="flex items-center gap-2 py-1">
+                  <div className="flex-1 h-1 bg-primary/40 rounded-full" />
+                  <div className="w-2 h-2 rounded-full bg-primary" />
+                  <div className="flex-1 h-1 bg-primary/40 rounded-full" />
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -127,11 +222,11 @@ export default function Tablero() {
               </div>
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="text-sm font-semibold text-secondary block mb-1">Título</label>
+                  <label className="text-sm font-semibold text-secondary block mb-1">T&iacute;tulo</label>
                   <input type="text" value={newCard.title} onChange={(e) => setNewCard({ ...newCard, title: e.target.value })} placeholder="Nombre de la tarea" className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium" />
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-secondary block mb-1">Descripción</label>
+                  <label className="text-sm font-semibold text-secondary block mb-1">Descripci&oacute;n</label>
                   <textarea value={newCard.desc} onChange={(e) => setNewCard({ ...newCard, desc: e.target.value })} placeholder="Detalles de la tarea" className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium resize-none h-24" />
                 </div>
                 <div>

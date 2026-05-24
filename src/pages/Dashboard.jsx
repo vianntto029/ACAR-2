@@ -24,6 +24,7 @@ export default function Dashboard() {
   const [currentPrograma, setCurrentPrograma] = useState('')
   const [isDownloading, setIsDownloading] = useState(false)
   const [showManualListModal, setShowManualListModal] = useState(false)
+  const [showQRModal, setShowQRModal] = useState(false)
   const [qrStatus, setQrStatus] = useState('active')
   const [manualName, setManualName] = useState('')
   const [manualSeccion, setManualSeccion] = useState('')
@@ -72,8 +73,7 @@ export default function Dashboard() {
 
   const handleOpenQR = () => {
     if (qrStatus === 'pending') return
-    const qrUrl = `https://acar-2-git-main-vianntto029s-projects.vercel.app/qr-view?data=${encodeURIComponent(qrData)}`
-    window.open(qrUrl, '_blank', 'width=500,height=600')
+    setShowQRModal(true)
     navigator.clipboard.writeText(qrData)
   }
 
@@ -167,7 +167,7 @@ export default function Dashboard() {
     }
   }
 
-  const qrData = `https://acar-2-git-main-vianntto029s-projects.vercel.app/registro?materia=${encodeURIComponent(currentMateria)}&instituto=${encodeURIComponent(currentInstituto)}`
+  const qrData = `https://acar-2-git-main-vianntto029s-projects.vercel.app/registro?materia=${encodeURIComponent(currentMateria)}`
 
   const getInitials = (name) => {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
@@ -811,6 +811,56 @@ export default function Dashboard() {
                   <FileText className="w-4 h-4" />
                   Exportar Documento
                 </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showQRModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/40 backdrop-blur-sm"
+            onClick={() => setShowQRModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-[2rem] w-full max-w-md overflow-hidden shadow-2xl border border-surface-variant text-center"
+            >
+              <div className="p-6 border-b border-surface-variant bg-surface flex justify-between items-center">
+                <h2 className="font-heading text-xl font-bold text-primary">Codigo QR de Asistencia</h2>
+                <button onClick={() => setShowQRModal(false)} className="w-8 h-8 bg-surface-variant rounded-full flex items-center justify-center text-secondary hover:text-primary transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-8 flex flex-col items-center gap-4">
+                <div className="bg-white p-6 rounded-2xl shadow-md border border-surface-variant">
+                  <QRCodeSVG
+                    value={qrData}
+                    size={280}
+                    level="H"
+                    bgColor="#FFFFFF"
+                    fgColor="#3573A3"
+                  />
+                </div>
+                <p className="text-secondary text-sm font-medium">Materia: <strong className="text-primary">{currentMateria}</strong></p>
+                <p className="text-secondary text-sm font-medium">Instituto: <strong className="text-primary">{currentInstituto}</strong></p>
+                {currentPrograma && <p className="text-secondary text-sm font-medium">Programa: <strong className="text-primary">{currentPrograma}</strong></p>}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => { navigator.clipboard.writeText(qrData); setShowQRModal(false) }}
+                  className="bg-[#3573A3] text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-md hover:opacity-90 transition-all"
+                >
+                  <Copy className="w-4 h-4" />
+                  Copiar enlace
+                </motion.button>
               </div>
             </motion.div>
           </motion.div>

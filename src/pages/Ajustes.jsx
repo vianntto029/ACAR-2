@@ -199,8 +199,8 @@ export default function Ajustes() {
                     <input
                       type="email"
                       value={profile.email}
-                      disabled
-                      className="w-full bg-white/40 border border-white/60 rounded-lg p-3 text-secondary shadow-sm outline-none cursor-not-allowed"
+                      onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                      className="w-full bg-white/70 border border-white/60 rounded-lg p-3 text-primary shadow-sm focus:border-primary outline-none"
                     />
                   </div>
 
