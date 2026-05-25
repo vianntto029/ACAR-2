@@ -375,13 +375,14 @@ export default function Tablero() {
                                   {card.estTime && <span className="flex items-center gap-0.5 bg-gray-50 px-1.5 py-0.5 rounded text-[10px]"><Clock className="w-2.5 h-2.5" />{card.estTime}</span>}
                                 </div>
                               </div>
-                              <div className="flex items-start gap-1 flex-shrink-0">
+                              <div className="flex items-start gap-1.5 flex-shrink-0 ml-1">
                                 {card.subtasks?.length > 0 && (
-                                  <button onClick={(e) => { e.stopPropagation(); toggleExpanded(card.id) }} className="text-secondary/40 hover:text-primary transition-colors mt-0.5">
+                                  <button onClick={(e) => { e.stopPropagation(); toggleExpanded(card.id) }} className="text-secondary/50 hover:text-primary bg-white/80 hover:bg-gray-100 rounded-md p-1 transition-all" title={expandedSubtasks[card.id] ? 'Colapsar subtareas' : 'Ver subtareas'}>
                                     {expandedSubtasks[card.id] ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                                    <span className="text-[9px] ml-0.5 font-semibold">{card.subtasks.filter(s => s.done).length}/{card.subtasks.length}</span>
                                   </button>
                                 )}
-                                <button onClick={(e) => { e.stopPropagation(); handleDeleteCard(col.id, card.id) }} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all flex-shrink-0"><X className="w-3.5 h-3.5" /></button>
+                                <button onClick={(e) => { e.stopPropagation(); handleDeleteCard(col.id, card.id) }} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all rounded-md p-1 hover:bg-red-50"><X className="w-3.5 h-3.5" /></button>
                               </div>
                             </div>
                             <AnimatePresence>
