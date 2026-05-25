@@ -233,15 +233,16 @@ export default function Tablero() {
             const colorClass = columnColors[colIdx % columnColors.length]
             const isOver = columnDropIdx === colIdx && columnDrag !== null && columnDrag !== colIdx
             return (
-              <div key={col.id} className={`glass-panel-solid rounded-[2rem] p-3 shadow-lg transition-all ${dropTarget?.colId === col.id ? 'shadow-[0_0_0_2px_#3573A3]' : ''} ${isOver ? 'ring-2 ring-primary/60 scale-[1.02]' : ''} ${columnDrag === colIdx ? 'shadow-2xl scale-[1.02] rotate-[0.3deg] z-50 ring-2 ring-primary/40' : ''}`}>
-                <div
-                  draggable
-                  onDragStart={(e) => handleColumnDragStart(e, colIdx)}
-                  onDragOver={(e) => handleColumnDragOver(e, colIdx)}
-                  onDragEnd={handleColumnDrop}
-                  onDrop={handleColumnDrop}
-                  className={`${colorClass} border rounded-xl mb-3 p-2 cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md`}
-                >
+              <div
+                key={col.id}
+                draggable
+                onDragStart={(e) => handleColumnDragStart(e, colIdx)}
+                onDragOver={(e) => handleColumnDragOver(e, colIdx)}
+                onDragEnd={handleColumnDrop}
+                onDrop={handleColumnDrop}
+                className={`glass-panel-solid rounded-[2rem] p-3 shadow-lg transition-all ${dropTarget?.colId === col.id ? 'shadow-[0_0_0_2px_#3573A3]' : ''} ${isOver ? 'ring-2 ring-primary/60 scale-[1.02]' : ''} ${columnDrag === colIdx ? 'shadow-2xl scale-[1.02] rotate-[0.3deg] z-50 ring-2 ring-primary/40' : ''} cursor-grab active:cursor-grabbing`}
+              >
+                <div className={`${colorClass} border rounded-xl mb-3 p-2 transition-shadow hover:shadow-md`}>
                   <div className="flex items-center justify-between gap-1">
                     <div className="flex items-center gap-1 min-w-0">
                       <GripVertical className="w-3.5 h-3.5 text-secondary/40 flex-shrink-0" />
