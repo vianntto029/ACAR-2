@@ -1,5 +1,5 @@
 import Layout from '../components/Layout'
-import { Plus, X, GripVertical } from 'lucide-react'
+import { Plus, X, Check, User, Calendar, Clock, Flag, ListTodo, AlignLeft, Save } from 'lucide-react'
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 
@@ -9,31 +9,51 @@ const initialColumns = {
   'completado': { id: 'completado', title: 'Completado', color: 'bg-green-50 border-green-200' },
 }
 
+const priorityConfig = {
+  baja: { label: 'Baja', color: 'bg-green-100 text-green-700' },
+  media: { label: 'Media', color: 'bg-yellow-100 text-yellow-700' },
+  alta: { label: 'Alta', color: 'bg-red-100 text-red-700' },
+}
+
 export default function Tablero() {
   const [columns] = useState(initialColumns)
   const [cards, setCards] = useState({
     'por-hacer': [
-      { id: '1', title: 'Planificar clase de matemáticas', desc: 'Preparar ejercicios y material didáctico' },
-      { id: '2', title: 'Revisar exámenes', desc: 'Corregir evaluaciones del trimestre' },
+      { id: '1', title: 'Planificar clase de matemáticas', desc: 'Preparar ejercicios y material didáctico', subtasks: [{ id: 's1', text: 'Revisar libro de texto', done: false }, { id: 's2', text: 'Preparar ejercicios prácticos', done: true }], assignee: 'Juan Pérez', dueDate: '2025-06-10', dueTime: '14:00', estTime: '3h', priority: 'alta' },
+      { id: '2', title: 'Revisar exámenes', desc: 'Corregir evaluaciones del trimestre', subtasks: [], assignee: '', dueDate: '', dueTime: '', estTime: '', priority: 'media' },
     ],
     'en-progreso': [
-      { id: '3', title: 'Diseñar proyecto final', desc: 'Estructurar las fases del proyecto' },
+      { id: '3', title: 'Diseñar proyecto final', desc: 'Estructurar las fases del proyecto', subtasks: [{ id: 's3', text: 'Definir alcance', done: true }, { id: 's4', text: 'Crear cronograma', done: false }], assignee: 'María García', dueDate: '2025-06-15', dueTime: '18:00', estTime: '8h', priority: 'alta' },
     ],
     'completado': [
-      { id: '4', title: 'Entregar notas', desc: 'Subir calificaciones al sistema' },
+      { id: '4', title: 'Entregar notas', desc: 'Subir calificaciones al sistema', subtasks: [], assignee: '', dueDate: '', dueTime: '', estTime: '', priority: 'baja' },
     ],
   })
   const [showModal, setShowModal] = useState(false)
-  const [newCard, setNewCard] = useState({ title: '', desc: '', column: 'por-hacer' })
+  const [newCard, setNewCard] = useState({ title: '', desc: '', column: 'por-hacer', assignee: '', dueDate: '', dueTime: '', estTime: '', priority: 'media' })
+  const [detailModal, setDetailModal] = useState(null)
+  const [editingCard, setEditingCard] = useState(null)
+  const [newSubtaskText, setNewSubtaskText] = useState('')
   const [dragState, setDragState] = useState(null)
   const [dropTarget, setDropTarget] = useState(null)
   const dragNodeRef = useRef(null)
+  const isDragging = useRef(false)
 
   const handleAddCard = () => {
     if (!newCard.title) return
-    const card = { id: Date.now().toString(), title: newCard.title, desc: newCard.desc }
+    const card = {
+      id: Date.now().toString(),
+      title: newCard.title,
+      desc: newCard.desc,
+      subtasks: [],
+      assignee: newCard.assignee,
+      dueDate: newCard.dueDate,
+      dueTime: newCard.dueTime,
+      estTime: newCard.estTime,
+      priority: newCard.priority,
+    }
     setCards(prev => ({ ...prev, [newCard.column]: [...(prev[newCard.column] || []), card] }))
-    setNewCard({ title: '', desc: '', column: 'por-hacer' })
+    setNewCard({ title: '', desc: '', column: 'por-hacer', assignee: '', dueDate: '', dueTime: '', estTime: '', priority: 'media' })
     setShowModal(false)
   }
 
@@ -62,6 +82,7 @@ export default function Tablero() {
   }
 
   const handleDragStart = (e, cardId, colId) => {
+    isDragging.current = true
     dragNodeRef.current = e.target
     setDragState({ cardId, fromCol: colId })
     e.dataTransfer.effectAllowed = 'move'
@@ -71,6 +92,7 @@ export default function Tablero() {
   }
 
   const handleDragEnd = (e) => {
+    isDragging.current = false
     if (dragNodeRef.current) dragNodeRef.current.style.opacity = '1'
     dragNodeRef.current = null
     setDragState(null)
@@ -118,6 +140,49 @@ export default function Tablero() {
     setDropTarget(null)
   }
 
+  const openDetailModal = (card, colId) => {
+    if (isDragging.current) return
+    setDetailModal({ colId })
+    setEditingCard(JSON.parse(JSON.stringify(card)))
+    setNewSubtaskText('')
+  }
+
+  const closeDetailModal = () => {
+    setDetailModal(null)
+    setEditingCard(null)
+    setNewSubtaskText('')
+  }
+
+  const saveDetailModal = () => {
+    if (!editingCard || !detailModal) return
+    setCards(prev => ({
+      ...prev,
+      [detailModal.colId]: prev[detailModal.colId].map(c =>
+        c.id === editingCard.id ? editingCard : c
+      ),
+    }))
+    closeDetailModal()
+  }
+
+  const addSubtask = () => {
+    if (!newSubtaskText.trim() || !editingCard) return
+    const newSub = { id: Date.now().toString() + Math.random().toString(36).slice(2, 6), text: newSubtaskText.trim(), done: false }
+    setEditingCard({ ...editingCard, subtasks: [...editingCard.subtasks, newSub] })
+    setNewSubtaskText('')
+  }
+
+  const removeSubtask = (subId) => {
+    if (!editingCard) return
+    setEditingCard({ ...editingCard, subtasks: editingCard.subtasks.filter(s => s.id !== subId) })
+  }
+
+  const toggleSubtask = (subId) => {
+    if (!editingCard) return
+    setEditingCard({ ...editingCard, subtasks: editingCard.subtasks.map(s => s.id === subId ? { ...s, done: !s.done } : s) })
+  }
+
+  const getPriority = (p) => priorityConfig[p] || priorityConfig.media
+
   return (
     <Layout>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-between items-center mb-6">
@@ -137,7 +202,7 @@ export default function Tablero() {
             className={`glass-panel-solid rounded-[2rem] p-4 shadow-lg transition-shadow ${dragState && dropTarget?.colId === col.id ? 'shadow-[0_0_0_2px_#3573A3]' : ''}`}
           >
             <div className={`p-3 rounded-xl mb-4 ${col.color} border`}>
-              <h3 className="font-bold text-primary text-center">{col.title}</h3>
+              <h3 className="font-bold text-primary text-center uppercase">{col.title}</h3>
               <p className="text-center text-xs text-secondary">{cards[col.id]?.length || 0} tareas</p>
             </div>
             <div
@@ -150,6 +215,7 @@ export default function Tablero() {
                 {(cards[col.id] || []).map((card, idx) => {
                   const isDragSource = dragState?.cardId === card.id
                   const hasDropAbove = dropTarget?.colId === col.id && dropTarget?.index === idx
+                  const pr = getPriority(card.priority)
                   return (
                     <div key={card.id}>
                       {hasDropAbove && (
@@ -168,29 +234,58 @@ export default function Tablero() {
                         draggable
                         onDragStart={(e) => handleDragStart(e, card.id, col.id)}
                         onDragEnd={handleDragEnd}
+                        onClick={() => openDetailModal(card, col.id)}
                         className="bg-white rounded-xl p-4 shadow-sm border border-surface-variant cursor-grab active:cursor-grabbing group hover:shadow-md hover:border-primary/30 transition-all"
                       >
                         <div className="flex justify-between items-start gap-2">
                           <div className="flex-1">
-                            <h4 className="font-bold text-primary text-sm">{card.title}</h4>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-bold text-primary text-sm">{card.title}</h4>
+                              {card.priority && (
+                                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${pr.color}`}>
+                                  <Flag className="w-3 h-3 inline mr-0.5" />
+                                  {pr.label}
+                                </span>
+                              )}
+                            </div>
                             {card.desc && <p className="text-xs text-secondary mt-1">{card.desc}</p>}
+                            <div className="flex flex-wrap gap-2 mt-2 text-[11px] text-secondary">
+                              {card.assignee && (
+                                <span className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded">
+                                  <User className="w-3 h-3" />
+                                  {card.assignee}
+                                </span>
+                              )}
+                              {card.dueDate && (
+                                <span className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded">
+                                  <Calendar className="w-3 h-3" />
+                                  {card.dueDate}{card.dueTime ? ` ${card.dueTime}` : ''}
+                                </span>
+                              )}
+                              {card.estTime && (
+                                <span className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded">
+                                  <Clock className="w-3 h-3" />
+                                  {card.estTime}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <button onClick={() => handleDeleteCard(col.id, card.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all flex-shrink-0">
+                          <button onClick={(e) => { e.stopPropagation(); handleDeleteCard(col.id, card.id) }} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all flex-shrink-0">
                             <X className="w-4 h-4" />
                           </button>
                         </div>
                         <div className="flex gap-1 mt-2">
                           {col.id !== 'por-hacer' && (
-                            <button onClick={() => moveCard(card.id, col.id, 'por-hacer', cards['por-hacer']?.length || 0)} className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">←</button>
+                            <button onClick={(e) => { e.stopPropagation(); moveCard(card.id, col.id, 'por-hacer', cards['por-hacer']?.length || 0) }} className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">←</button>
                           )}
                           {col.id === 'por-hacer' && (
-                            <button onClick={() => moveCard(card.id, col.id, 'en-progreso', cards['en-progreso']?.length || 0)} className="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors">Iniciar</button>
+                            <button onClick={(e) => { e.stopPropagation(); moveCard(card.id, col.id, 'en-progreso', cards['en-progreso']?.length || 0) }} className="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors">Iniciar</button>
                           )}
                           {col.id === 'en-progreso' && (
-                            <button onClick={() => moveCard(card.id, col.id, 'completado', cards['completado']?.length || 0)} className="text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-600 hover:bg-green-200 transition-colors">Completar</button>
+                            <button onClick={(e) => { e.stopPropagation(); moveCard(card.id, col.id, 'completado', cards['completado']?.length || 0) }} className="text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-600 hover:bg-green-200 transition-colors">Completar</button>
                           )}
                           {col.id === 'completado' && (
-                            <button onClick={() => moveCard(card.id, col.id, 'en-progreso', cards['en-progreso']?.length || 0)} className="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors">Reabrir</button>
+                            <button onClick={(e) => { e.stopPropagation(); moveCard(card.id, col.id, 'en-progreso', cards['en-progreso']?.length || 0) }} className="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors">Reabrir</button>
                           )}
                         </div>
                       </motion.div>
@@ -213,21 +308,49 @@ export default function Tablero() {
       <AnimatePresence>
         {showModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/40 backdrop-blur-sm">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-[2rem] w-full max-w-md overflow-hidden shadow-2xl border border-surface-variant">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-[2rem] w-full max-w-lg overflow-hidden shadow-2xl border border-surface-variant">
               <div className="p-6 border-b border-surface-variant bg-surface flex justify-between items-center">
                 <h2 className="font-heading text-xl font-bold text-primary">Nueva Tarea</h2>
                 <button onClick={() => setShowModal(false)} className="w-8 h-8 bg-surface-variant rounded-full flex items-center justify-center text-secondary hover:text-primary transition-colors">
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <div className="p-6 space-y-4">
+              <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
                 <div>
-                  <label className="text-sm font-semibold text-secondary block mb-1">T&iacute;tulo</label>
+                  <label className="text-sm font-semibold text-secondary block mb-1"><AlignLeft className="w-3.5 h-3.5 inline mr-1" />T&iacute;tulo</label>
                   <input type="text" value={newCard.title} onChange={(e) => setNewCard({ ...newCard, title: e.target.value })} placeholder="Nombre de la tarea" className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium" />
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-secondary block mb-1">Descripci&oacute;n</label>
-                  <textarea value={newCard.desc} onChange={(e) => setNewCard({ ...newCard, desc: e.target.value })} placeholder="Detalles de la tarea" className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium resize-none h-24" />
+                  <label className="text-sm font-semibold text-secondary block mb-1"><AlignLeft className="w-3.5 h-3.5 inline mr-1" />Descripci&oacute;n</label>
+                  <textarea value={newCard.desc} onChange={(e) => setNewCard({ ...newCard, desc: e.target.value })} placeholder="Detalles de la tarea" className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium resize-none h-20" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-semibold text-secondary block mb-1"><User className="w-3.5 h-3.5 inline mr-1" />Asignado a</label>
+                    <input type="text" value={newCard.assignee} onChange={(e) => setNewCard({ ...newCard, assignee: e.target.value })} placeholder="Nombre" className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-secondary block mb-1"><Flag className="w-3.5 h-3.5 inline mr-1" />Prioridad</label>
+                    <select value={newCard.priority} onChange={(e) => setNewCard({ ...newCard, priority: e.target.value })} className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium">
+                      <option value="baja">Baja</option>
+                      <option value="media">Media</option>
+                      <option value="alta">Alta</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-semibold text-secondary block mb-1"><Calendar className="w-3.5 h-3.5 inline mr-1" />Fecha</label>
+                    <input type="date" value={newCard.dueDate} onChange={(e) => setNewCard({ ...newCard, dueDate: e.target.value })} className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-secondary block mb-1"><Clock className="w-3.5 h-3.5 inline mr-1" />Hora</label>
+                    <input type="time" value={newCard.dueTime} onChange={(e) => setNewCard({ ...newCard, dueTime: e.target.value })} className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-secondary block mb-1"><Clock className="w-3.5 h-3.5 inline mr-1" />Tiempo estimado</label>
+                  <input type="text" value={newCard.estTime} onChange={(e) => setNewCard({ ...newCard, estTime: e.target.value })} placeholder="Ej: 2h, 30m" className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium" />
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-secondary block mb-1">Columna</label>
@@ -241,6 +364,88 @@ export default function Tablero() {
               <div className="p-6 border-t border-surface-variant bg-surface flex justify-end gap-3">
                 <button onClick={() => setShowModal(false)} className="px-6 py-2.5 rounded-xl font-bold text-secondary hover:bg-surface-variant transition-colors">Cancelar</button>
                 <button onClick={handleAddCard} disabled={!newCard.title} className="px-6 py-2.5 rounded-xl font-bold bg-[#3573A3] text-white hover:opacity-90 transition-all disabled:opacity-50">Agregar Tarea</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {detailModal && editingCard && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/40 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-[2rem] w-full max-w-lg overflow-hidden shadow-2xl border border-surface-variant">
+              <div className="p-6 border-b border-surface-variant bg-surface flex justify-between items-center">
+                <h2 className="font-heading text-xl font-bold text-primary">Detalle de Tarea</h2>
+                <button onClick={closeDetailModal} className="w-8 h-8 bg-surface-variant rounded-full flex items-center justify-center text-secondary hover:text-primary transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                <div>
+                  <label className="text-sm font-semibold text-secondary block mb-1"><AlignLeft className="w-3.5 h-3.5 inline mr-1" />T&iacute;tulo</label>
+                  <input type="text" value={editingCard.title} onChange={(e) => setEditingCard({ ...editingCard, title: e.target.value })} className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-secondary block mb-1"><AlignLeft className="w-3.5 h-3.5 inline mr-1" />Descripci&oacute;n</label>
+                  <textarea value={editingCard.desc} onChange={(e) => setEditingCard({ ...editingCard, desc: e.target.value })} placeholder="Sin descripci&oacute;n" className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium resize-none h-20" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-secondary block mb-2"><ListTodo className="w-3.5 h-3.5 inline mr-1" />Subtareas</label>
+                  <div className="space-y-2 mb-3">
+                    {editingCard.subtasks.map(sub => (
+                      <div key={sub.id} className="flex items-center gap-2 bg-surface-variant/30 rounded-lg px-3 py-2">
+                        <button onClick={() => toggleSubtask(sub.id)} className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${sub.done ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-primary'}`}>
+                          {sub.done && <Check className="w-3 h-3 text-white" />}
+                        </button>
+                        <span className={`flex-1 text-sm ${sub.done ? 'line-through text-gray-400' : 'text-primary'}`}>{sub.text}</span>
+                        <button onClick={() => removeSubtask(sub.id)} className="text-red-300 hover:text-red-500 transition-colors">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                    {editingCard.subtasks.length === 0 && <p className="text-xs text-secondary">Sin subtareas</p>}
+                  </div>
+                  <div className="flex gap-2">
+                    <input type="text" value={newSubtaskText} onChange={(e) => setNewSubtaskText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addSubtask()} placeholder="Nueva subtarea..." className="flex-1 bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-primary/20 text-primary text-sm" />
+                    <button onClick={addSubtask} disabled={!newSubtaskText.trim()} className="bg-[#3573A3] text-white px-3 py-2 rounded-xl hover:opacity-90 transition-all disabled:opacity-50">
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-semibold text-secondary block mb-1"><User className="w-3.5 h-3.5 inline mr-1" />Asignado a</label>
+                    <input type="text" value={editingCard.assignee} onChange={(e) => setEditingCard({ ...editingCard, assignee: e.target.value })} placeholder="Sin asignar" className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-secondary block mb-1"><Flag className="w-3.5 h-3.5 inline mr-1" />Prioridad</label>
+                    <select value={editingCard.priority} onChange={(e) => setEditingCard({ ...editingCard, priority: e.target.value })} className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium">
+                      <option value="baja">Baja</option>
+                      <option value="media">Media</option>
+                      <option value="alta">Alta</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-semibold text-secondary block mb-1"><Calendar className="w-3.5 h-3.5 inline mr-1" />Fecha</label>
+                    <input type="date" value={editingCard.dueDate} onChange={(e) => setEditingCard({ ...editingCard, dueDate: e.target.value })} className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-secondary block mb-1"><Clock className="w-3.5 h-3.5 inline mr-1" />Hora</label>
+                    <input type="time" value={editingCard.dueTime} onChange={(e) => setEditingCard({ ...editingCard, dueTime: e.target.value })} className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-secondary block mb-1"><Clock className="w-3.5 h-3.5 inline mr-1" />Tiempo estimado</label>
+                  <input type="text" value={editingCard.estTime} onChange={(e) => setEditingCard({ ...editingCard, estTime: e.target.value })} placeholder="Ej: 2h, 30m" className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium" />
+                </div>
+              </div>
+              <div className="p-6 border-t border-surface-variant bg-surface flex justify-end gap-3">
+                <button onClick={closeDetailModal} className="px-6 py-2.5 rounded-xl font-bold text-secondary hover:bg-surface-variant transition-colors">Cancelar</button>
+                <button onClick={saveDetailModal} className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 bg-[#3573A3] text-white hover:opacity-90 transition-all">
+                  <Save className="w-4 h-4" /> Guardar
+                </button>
               </div>
             </motion.div>
           </motion.div>

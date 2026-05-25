@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import Layout from '../components/Layout'
 import {
   Building, Library, QrCode, Users, Download, User, Check, AlertCircle,
@@ -36,7 +36,27 @@ export default function Dashboard() {
   const [manualSeccion, setManualSeccion] = useState('')
   const [manualList, setManualList] = useState([])
   const [manualStatus, setManualStatus] = useState('')
+  const [excelStudents, setExcelStudents] = useState([])
+  const [excelAsistencia, setExcelAsistencia] = useState({})
+  const fileInputRef = useRef(null)
   const qrLinkRef = useRef(null)
+  const [exposicionMode, setExposicionMode] = useState(false)
+  const [statsFilter, setStatsFilter] = useState('semanal')
+
+  const statsFiltered = useMemo(() => {
+    const now = new Date()
+    let start
+    if (statsFilter === 'semanal') { start = new Date(now); start.setDate(start.getDate() - 7) }
+    else if (statsFilter === 'trimestral') { start = new Date(now); start.setMonth(start.getMonth() - 3) }
+    else { start = new Date(now.getFullYear(), 0, 1) }
+    const startKey = start.toISOString().split('T')[0]
+    return attendance.filter(a => a.date >= startKey)
+  }, [attendance, statsFilter])
+
+  const statsUniqueStudents = new Set(statsFiltered.map(a => a.nationalId)).size
+  const statsCount = statsFiltered.length
+  const statsTotal = statsUniqueStudents || 30
+  const statsPct = statsTotal > 0 ? Math.round((statsCount / statsTotal) * 100) : 0
 
   useEffect(() => { localStorage.setItem('acar_materia', currentMateria) }, [currentMateria])
   useEffect(() => { localStorage.setItem('acar_instituto', currentInstituto) }, [currentInstituto])
@@ -121,6 +141,68 @@ export default function Dashboard() {
       }
       setManualStatus(`${manualList.length} estudiante(s) registrado(s) en Firebase`)
       setManualList([])
+      setTimeout(() => {
+        setShowManualListModal(false)
+        setManualStatus('')
+      }, 1500)
+    } catch (err) {
+      setManualStatus('Error al guardar: ' + err.message)
+    }
+  }
+
+  const handleExcelUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setManualStatus('Leyendo archivo...')
+    try {
+      const workbook = new ExcelJS.Workbook()
+      const arrayBuffer = await file.arrayBuffer()
+      await workbook.xlsx.load(arrayBuffer)
+      const sheet = workbook.worksheets[0]
+      const students = []
+      sheet.eachRow((row, rowIdx) => {
+        if (rowIdx === 1) return
+        const name = String(row.getCell(1).value || '').trim()
+        const cedula = String(row.getCell(2).value || '').trim()
+        if (name) students.push({ id: Date.now().toString() + rowIdx, name, cedula })
+      })
+      if (students.length === 0) {
+        setManualStatus('No se encontraron estudiantes en el archivo')
+        return
+      }
+      setExcelStudents(students)
+      const asist = {}
+      students.forEach(s => { asist[s.id] = true })
+      setExcelAsistencia(asist)
+      setManualStatus(`${students.length} estudiante(s) cargado(s) desde Excel`)
+      setManualList([])
+    } catch (err) {
+      setManualStatus('Error al leer Excel: ' + err.message)
+    }
+    e.target.value = ''
+  }
+
+  const handleSaveExcelList = async () => {
+    const selected = excelStudents.filter(s => excelAsistencia[s.id])
+    if (selected.length === 0) { setManualStatus('Selecciona al menos un estudiante'); return }
+    setManualStatus('Guardando...')
+    try {
+      for (const student of selected) {
+        await push(ref(db, `institutos/ACAR/attendance`), {
+          name: student.name,
+          subject: currentMateria || 'Programa ACAR',
+          nationalId: student.cedula || 'EXCEL-' + student.id,
+          seccion: 'Cargado',
+          representante: '',
+          date: today,
+          time: new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false }),
+          code: `ACAR-${today}`,
+          instituto: currentInstituto || 'Programa ACAR',
+        })
+      }
+      setManualStatus(`${selected.length} estudiante(s) registrado(s) como ASISTENTE(S)`)
+      setExcelStudents([])
+      setExcelAsistencia({})
       setTimeout(() => {
         setShowManualListModal(false)
         setManualStatus('')
@@ -573,47 +655,111 @@ export default function Dashboard() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="mt-6 mb-12 glass-panel-solid rounded-[2rem] p-8 shadow-lg w-full"
+        className={`mt-6 mb-12 rounded-[2rem] p-8 shadow-lg w-full transition-all ${exposicionMode ? 'bg-[#fefce8] border-2 border-yellow-400' : 'glass-panel-solid'}`}
       >
-        <h4 className="text-secondary font-bold uppercase tracking-widest text-sm mb-6">Estadisticas de la Jornada</h4>
-        <div className="flex flex-col md:flex-row gap-8">
-          <div className="flex-1">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-primary font-bold text-lg flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#10b981]"></div>
-                Asistieron
-              </span>
-              <div className="flex items-end gap-2 text-primary font-bold">
-                <span className="text-3xl font-heading leading-none">{attendanceCount}</span>
-                <span className="text-lg opacity-80 pb-0.5">({percentage}%)</span>
-              </div>
-            </div>
-            <div className="w-full bg-surface-variant rounded-full h-4 overflow-hidden border border-outline-variant/30">
-              <div
-                className="bg-[#10b981] h-full transition-all duration-1000"
-                style={{ width: `${percentage}%` }}
-              ></div>
-            </div>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <h4 className="text-secondary font-bold uppercase tracking-widest text-sm">
+              {statsFilter === 'semanal' ? 'ESTADISTICAS SEMANALES' : statsFilter === 'trimestral' ? 'ESTADISTICAS TRIMESTRALES' : 'ESTADISTICAS DEL AÑO'}
+            </h4>
+            {exposicionMode && (
+              <span className="text-[10px] font-bold bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full uppercase tracking-wider">REFERENCIA</span>
+            )}
           </div>
-          <div className="flex-1">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-secondary font-bold text-lg flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                Inasistencias
-              </span>
-              <div className="flex items-end gap-2 text-secondary font-bold">
-                <span className="text-3xl font-heading leading-none">{Math.max(0, totalStudents - attendanceCount)}</span>
-                <span className="text-lg opacity-80 pb-0.5">({100 - percentage}%)</span>
-              </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex bg-white/80 rounded-xl border border-outline-variant/30 p-0.5 shadow-sm">
+              {['semanal', 'trimestral', 'anual'].map(f => (
+                <button key={f} onClick={() => { setStatsFilter(f); if (exposicionMode) setExposicionMode(false) }} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${statsFilter === f ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'}`}>
+                  {f === 'semanal' ? 'Semanal' : f === 'trimestral' ? 'Trimestral' : 'Año Académico'}
+                </button>
+              ))}
             </div>
-            <div className="w-full bg-surface-variant rounded-full h-4 overflow-hidden border border-outline-variant/30">
-              <div
-                className="bg-red-400 h-full transition-all duration-1000"
-                style={{ width: `${100 - percentage}%` }}
-              ></div>
-            </div>
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => {
+                if (exposicionMode) {
+                  setExposicionMode(false)
+                } else {
+                  setExposicionMode(true)
+                }
+              }}
+              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${exposicionMode ? 'bg-yellow-400 text-yellow-900 shadow-sm' : 'bg-white border border-outline-variant text-secondary hover:text-primary'}`}
+            >
+              {exposicionMode ? 'Desactivar Vista' : 'Vista de Exposición'}
+            </motion.button>
           </div>
         </div>
+
+        {exposicionMode ? (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { label: 'Estudiantes Registrados', value: '1,247', sub: 'en el período', color: 'text-primary', bar: 'bg-primary' },
+                { label: 'Asistencias Totales', value: '1,083', sub: `${statsPct}% de promedio`, color: 'text-[#10b981]', bar: 'bg-[#10b981]' },
+                { label: 'Instituciones Activas', value: '8', sub: 'en todo el país', color: 'text-[#d8629d]', bar: 'bg-[#d8629d]' },
+              ].map((item, i) => (
+                <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-yellow-100">
+                  <p className="text-xs text-secondary font-semibold uppercase tracking-wider mb-1">{item.label}</p>
+                  <p className={`font-heading text-4xl font-bold ${item.color} leading-none`}>{item.value}</p>
+                  <p className="text-xs text-secondary mt-1">{item.sub}</p>
+                  <div className="w-full bg-gray-100 rounded-full h-2 mt-3">
+                    <div className={`${item.bar} h-full rounded-full`} style={{ width: `${60 + i * 15}%` }}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-yellow-100">
+              <p className="text-xs text-secondary font-semibold uppercase tracking-wider mb-3">Comparativa por Período</p>
+              <div className="flex items-end gap-4 h-32">
+                {[{ label: 'Ene', v: 65 }, { label: 'Feb', v: 72 }, { label: 'Mar', v: 80 }, { label: 'Abr', v: 68 }, { label: 'May', v: 78 }, { label: 'Jun', v: 85 }, { label: 'Jul', v: 0 }].map((m, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <div className="w-full bg-[#3573A3]/20 rounded-t-lg" style={{ height: `${m.v * 1.5}px`, minHeight: m.v > 0 ? '8px' : '0' }}>
+                      {m.v > 0 && <div className="w-full bg-primary rounded-t-lg transition-all hover:opacity-80" style={{ height: `${m.v * 1.5}px` }}></div>}
+                    </div>
+                    <span className="text-[10px] font-bold text-secondary">{m.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <p className="text-center text-[10px] text-secondary/60 italic">* Datos de referencia con fines demostrativos</p>
+          </div>
+        ) : (
+          <div className="flex flex-col md:flex-row gap-8">
+            <div className="flex-1">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-primary font-bold text-lg flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-[#10b981]"></div>
+                  Asistieron
+                </span>
+                <div className="flex items-end gap-2 text-primary font-bold">
+                  <span className="text-3xl font-heading leading-none">{statsCount}</span>
+                  <span className="text-lg opacity-80 pb-0.5">({statsPct}%)</span>
+                </div>
+              </div>
+              <div className="w-full bg-surface-variant rounded-full h-4 overflow-hidden border border-outline-variant/30">
+                <div className="bg-[#10b981] h-full transition-all duration-1000" style={{ width: `${statsPct}%` }}></div>
+              </div>
+              <p className="text-xs text-secondary/70 mt-2 font-medium">{statsFilter === 'semanal' ? 'Últimos 7 días' : statsFilter === 'trimestral' ? 'Últimos 3 meses' : 'Año académico actual'} — {statsUniqueStudents} estudiantes únicos</p>
+            </div>
+            <div className="flex-1">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-secondary font-bold text-lg flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                  Inasistencias
+                </span>
+                <div className="flex items-end gap-2 text-secondary font-bold">
+                  <span className="text-3xl font-heading leading-none">{Math.max(0, statsTotal - statsCount)}</span>
+                  <span className="text-lg opacity-80 pb-0.5">({100 - statsPct}%)</span>
+                </div>
+              </div>
+              <div className="w-full bg-surface-variant rounded-full h-4 overflow-hidden border border-outline-variant/30">
+                <div className="bg-red-400 h-full transition-all duration-1000" style={{ width: `${100 - statsPct}%` }}></div>
+              </div>
+              <p className="text-xs text-secondary/70 mt-2 font-medium">Total esperado: {statsTotal} estudiantes</p>
+            </div>
+          </div>
+        )}
       </motion.div>
 
       <AnimatePresence>
@@ -650,7 +796,12 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                <h4 className="font-bold text-primary mb-4">Agregar Estudiante Manualmente</h4>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="flex-1 h-px bg-outline-variant/40"></div>
+                  <span className="text-xs font-bold text-secondary uppercase tracking-wider">Carga Manual</span>
+                  <div className="flex-1 h-px bg-outline-variant/40"></div>
+                </div>
+
                 <div className="bg-white p-4 rounded-2xl border border-surface-variant shadow-sm mb-6">
                   <div className="flex flex-col sm:flex-row gap-3">
                     <input
@@ -681,7 +832,7 @@ export default function Dashboard() {
                 </div>
 
                 {manualList.length > 0 && (
-                  <div className="bg-white rounded-2xl border border-surface-variant shadow-sm overflow-hidden mb-4">
+                  <div className="bg-white rounded-2xl border border-surface-variant shadow-sm overflow-hidden mb-6">
                     <div className="p-4 border-b border-surface-variant bg-surface/50">
                       <h4 className="font-bold text-primary">Lista Temporal ({manualList.length} estudiante(s))</h4>
                     </div>
@@ -703,14 +854,83 @@ export default function Dashboard() {
                     </div>
                   </div>
                 )}
+
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="flex-1 h-px bg-outline-variant/40"></div>
+                  <span className="text-xs font-bold text-secondary uppercase tracking-wider">Carga por Excel</span>
+                  <div className="flex-1 h-px bg-outline-variant/40"></div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-surface-variant shadow-sm mb-6">
+                  <p className="text-sm text-secondary font-medium mb-3">Sube un archivo Excel (.xlsx) con columnas: <strong>Nombre</strong> (col A), <strong>Cédula</strong> (col B). La primera fila se ignora como encabezado.</p>
+                  <div className="flex items-center gap-3">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={handleExcelUpload}
+                      className="hidden"
+                    />
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="bg-white border-2 border-dashed border-primary/30 text-primary px-5 py-3 rounded-xl font-bold flex items-center gap-2 hover:border-primary hover:bg-primary/5 transition-all text-sm"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Seleccionar Archivo Excel
+                    </motion.button>
+                  </div>
+                </div>
+
+                {excelStudents.length > 0 && (
+                  <div className="bg-white rounded-2xl border border-surface-variant shadow-sm overflow-hidden mb-6">
+                    <div className="p-4 border-b border-surface-variant bg-surface/50 flex justify-between items-center">
+                      <h4 className="font-bold text-primary">Estudiantes desde Excel ({excelStudents.length})</h4>
+                      <span className="text-xs text-secondary font-medium">{excelStudents.filter(s => excelAsistencia[s.id]).length} seleccionados</span>
+                    </div>
+                    <div className="divide-y divide-surface-variant/50 max-h-64 overflow-y-auto">
+                      {excelStudents.map((student) => (
+                        <div key={student.id} className="flex items-center justify-between px-4 py-3 hover:bg-surface-variant/20 transition-colors">
+                          <label className="flex items-center gap-3 cursor-pointer flex-1">
+                            <input
+                              type="checkbox"
+                              checked={excelAsistencia[student.id] || false}
+                              onChange={() => setExcelAsistencia(prev => ({ ...prev, [student.id]: !prev[student.id] }))}
+                              className="w-4 h-4 rounded accent-[#10b981]"
+                            />
+                            <div>
+                              <span className={`font-semibold text-sm ${excelAsistencia[student.id] ? 'text-primary' : 'text-secondary line-through'}`}>{student.name}</span>
+                              {student.cedula && <span className="text-secondary text-xs ml-2">({student.cedula})</span>}
+                            </div>
+                          </label>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${excelAsistencia[student.id] ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-500'}`}>
+                            {excelAsistencia[student.id] ? 'ASISTENTE' : 'AUSENTE'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="p-6 border-t border-surface-variant bg-surface flex justify-end gap-3">
                 <button
-                  onClick={() => { setShowManualListModal(false); setManualList([]); setManualStatus('') }}
+                  onClick={() => { setShowManualListModal(false); setManualList([]); setExcelStudents([]); setExcelAsistencia({}); setManualStatus('') }}
                   className="px-6 py-2.5 rounded-xl font-bold text-secondary hover:bg-surface-variant transition-colors"
                 >
                   Descartar
                 </button>
+                {excelStudents.length > 0 && (
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleSaveExcelList}
+                    disabled={excelStudents.filter(s => excelAsistencia[s.id]).length === 0}
+                    className="px-6 py-2.5 rounded-xl font-bold bg-[#10b981] text-white hover:opacity-90 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Guardar Asistentes desde Excel
+                  </motion.button>
+                )}
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -718,7 +938,7 @@ export default function Dashboard() {
                   disabled={manualList.length === 0}
                   className="px-6 py-2.5 rounded-xl font-bold bg-[#d8629d] text-white hover:opacity-90 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Guardar Lista en Firebase
+                  Guardar Lista Manual en Firebase
                 </motion.button>
               </div>
             </motion.div>

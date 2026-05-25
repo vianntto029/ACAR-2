@@ -2,6 +2,7 @@ import Layout from '../components/Layout'
 import { GraduationCap, Download, FileText, Search } from 'lucide-react'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
+import ExcelJS from 'exceljs'
 
 const estudiantesNotas = [
   { id: '1', name: 'Ana López', notas: { '1er': 18, '2do': 16, '3er': 19 }, promedio: 17.7 },
@@ -50,17 +51,121 @@ export default function Notas() {
     setEditingStudent(null)
   }
 
+  const getStatusText = (prom) => {
+    if (prom >= 14) return { text: 'Aprobado', color: 'text-green-600 bg-green-50 border-green-200' }
+    if (prom >= 10) return { text: 'Debe recuperación', color: 'text-yellow-600 bg-yellow-50 border-yellow-200' }
+    return { text: 'Reprobado', color: 'text-red-600 bg-red-50 border-red-200' }
+  }
+
+  const exportExcel = async () => {
+    const workbook = new ExcelJS.Workbook()
+    const sheet = workbook.addWorksheet('Notas')
+
+    sheet.columns = [
+      { header: 'Estudiante', key: 'name', width: 30 },
+      { header: '1er Trimestre', key: 't1', width: 16 },
+      { header: '2do Trimestre', key: 't2', width: 16 },
+      { header: '3er Trimestre', key: 't3', width: 16 },
+      { header: 'Promedio', key: 'prom', width: 14 },
+      { header: 'Estado', key: 'status', width: 22 },
+    ]
+
+    const headerRow = sheet.getRow(1)
+    headerRow.eachCell(cell => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 }
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3573A3' } }
+      cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+        left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+        bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+        right: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      }
+    })
+
+    estudiantesNotas.forEach(s => {
+      sheet.addRow({
+        name: s.name,
+        t1: s.notas['1er'],
+        t2: s.notas['2do'],
+        t3: s.notas['3er'],
+        prom: s.promedio,
+        status: getStatusText(s.promedio).text,
+      })
+    })
+
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `notas_${new Date().toISOString().slice(0, 10)}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const exportPDF = () => {
+    const win = window.open('', '_blank')
+    const statuses = estudiantesNotas.map(s => getStatusText(s.promedio).text)
+    const rows = estudiantesNotas.map((s, i) => `
+      <tr>
+        <td>${s.name}</td>
+        <td>${s.notas['1er']}</td>
+        <td>${s.notas['2do']}</td>
+        <td>${s.notas['3er']}</td>
+        <td><strong>${s.promedio}</strong></td>
+        <td>${statuses[i]}</td>
+      </tr>
+    `).join('')
+
+    win.document.write(`
+      <html>
+      <head>
+        <title>Notas</title>
+        <style>
+          @media print {
+            body { font-family: Arial, sans-serif; padding: 40px; }
+            h1 { text-align: center; color: #3573A3; margin-bottom: 8px; }
+            p.sub { text-align: center; color: #666; margin-bottom: 24px; }
+            table { width: 100%; border-collapse: collapse; }
+            th { background: #3573A3; color: #fff; padding: 10px 12px; text-align: center; font-size: 13px; }
+            td { padding: 8px 12px; text-align: center; border: 1px solid #ccc; font-size: 12px; }
+            th:first-child, td:first-child { text-align: left; }
+            tr:nth-child(even) { background: #f5f8fa; }
+          }
+        </style>
+      </head>
+      <body>
+        <h1>REGISTRO DE NOTAS</h1>
+        <p class="sub">Calificaciones por trimestre académico</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Estudiante</th>
+              <th>1er Trimestre</th>
+              <th>2do Trimestre</th>
+              <th>3er Trimestre</th>
+              <th>Promedio</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </body>
+      </html>
+    `)
+    win.document.close()
+    win.focus()
+    setTimeout(() => win.print(), 500)
+  }
+
   const getNotaColor = (nota) => {
     if (nota >= 18) return 'text-green-600 bg-green-50'
     if (nota >= 14) return 'text-blue-600 bg-blue-50'
     if (nota >= 10) return 'text-yellow-600 bg-yellow-50'
     return 'text-red-600 bg-red-50'
-  }
-
-  const getStatusText = (prom) => {
-    if (prom >= 14) return { text: 'Aprobado', color: 'text-green-600 bg-green-50 border-green-200' }
-    if (prom >= 10) return { text: 'Debe recuperación', color: 'text-yellow-600 bg-yellow-50 border-yellow-200' }
-    return { text: 'Reprobado', color: 'text-red-600 bg-red-50 border-red-200' }
   }
 
   return (
@@ -140,10 +245,10 @@ export default function Notas() {
       </div>
 
       <div className="flex justify-end gap-3 mt-6">
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="bg-white border border-outline-variant text-primary px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-sm hover:bg-surface transition-all text-sm">
+        <motion.button onClick={exportPDF} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="bg-white border border-outline-variant text-primary px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-sm hover:bg-surface transition-all text-sm">
           <FileText className="w-4 h-4" /> Exportar PDF
         </motion.button>
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="bg-[#207245] text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-sm hover:opacity-90 transition-all text-sm">
+        <motion.button onClick={exportExcel} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="bg-[#207245] text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-sm hover:opacity-90 transition-all text-sm">
           <Download className="w-4 h-4" /> Exportar Excel
         </motion.button>
       </div>
