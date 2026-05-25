@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+
+<html lang="es" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Registro de Asistencia</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"surface-container-low": "#f2f4f5", "on-tertiary": "#ffffff", "on-tertiary-fixed": "#071e28", "on-secondary-container": "#4a6679", outline: "#71787d", "surface-tint": "#2f647f", "secondary-fixed": "#c9e6fd", "on-surface-variant": "#41484d", "on-secondary-fixed": "#001e2d", "on-primary-fixed-variant": "#104c66", "tertiary-fixed-dim": "#b4cad7", "tertiary-container": "#5c717d", "on-secondary-fixed-variant": "#2e4a5c", "on-primary-fixed": "#001e2c", "on-error-container": "#93000a", "on-surface": "#191c1d", "on-primary-container": "#e6f4ff", "inverse-primary": "#9bcdec", "on-tertiary-container": "#e3f4ff", "surface-dim": "#d8dadb", "on-error": "#ffffff", "inverse-on-surface": "#eff1f2", "secondary-fixed-dim": "#adcae0", "primary-fixed": "#c4e7ff", "primary-fixed-dim": "#9bcdec", primary: "#255b76", "primary-container": "#417490", "inverse-surface": "#2e3132", "surface-container": "#eceeef", surface: "#f8fafb", "outline-variant": "#c1c7cd", error: "#ba1a1a", "on-primary": "#ffffff", "surface-bright": "#f8fafb", "on-tertiary-fixed-variant": "#354a54", tertiary: "#445964", secondary: "#466275", "on-background": "#191c1d", "tertiary-fixed": "#cfe6f3", "secondary-container": "#c6e4fa", "surface-container-high": "#e6e8e9", background: "#f8fafb", "surface-variant": "#e1e3e4", "on-secondary": "#ffffff", "error-container": "#ffdad6", "surface-container-highest": "#e1e3e4", "surface-container-lowest": "#ffffff"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {"container-padding-desktop": "32px", "container-padding-mobile": "16px", gutter: "24px", unit: "8px", "section-gap": "64px"}, fontFamily: {"label-md": ["Open Sans"], "headline-lg": ["Open Sans"], "headline-md": ["Open Sans"], "body-md": ["Open Sans"], caption: ["Open Sans"], "display-xl": ["Open Sans"], "body-lg": ["Open Sans"], headline: ["Open Sans"], display: ["Open Sans"], body: ["Open Sans"], label: ["Open Sans"]}, fontSize: {"label-md": ["14px", {lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600"}], "headline-lg": ["32px", {lineHeight: "40px", fontWeight: "600"}], "headline-md": ["24px", {lineHeight: "32px", fontWeight: "600"}], "body-md": ["16px", {lineHeight: "24px", fontWeight: "400"}], caption: ["12px", {lineHeight: "16px", fontWeight: "400"}], "display-xl": ["48px", {lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "700"}], "body-lg": ["18px", {lineHeight: "28px", fontWeight: "400"}]}}}};</script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style data-stitch-cursor=""></style><style data-stitch-scroll-lock=""></style></head>
+<body class="bg-surface text-on-surface font-body-md min-h-screen relative flex items-center justify-center p-container-padding-mobile md:p-container-padding-desktop" style="background: linear-gradient(0deg, #3573a3 0%, #A6C4D6 40%, #FFFFFF 100%); background-attachment: fixed;">
+<!-- Background Gradient (Academic Glass bottom origin) -->
+<!-- Ambient Blur Orbs for Depth -->
+<!-- Main Content Canvas (Transactional Focus, Nav Suppressed) -->
+<main class="w-full max-w-[500px] relative z-10 flex-none">
+<!-- Glassmorphism Card -->
+<div class="bg-white/70 backdrop-blur-[20px] border border-white/60 shadow-[0_30px_60px_-15px_rgba(37,91,118,0.15)] rounded-xl p-8 md:p-10">
+<!-- Header Section -->
+<div class="text-center mb-8">
+<div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary-container/10 text-primary mb-4">
+<span class="material-symbols-outlined text-3xl" data-icon="how_to_reg">how_to_reg</span>
+</div>
+<h1 class="font-headline-md text-headline-md text-on-surface mb-2">Registro de Asistencia</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Ingrese los datos para confirmar la presencia en la sesión académica.</p>
+</div>
+<!-- Form -->
+<form action="#" class="space-y-6" method="POST">
+<!-- Input: Nombre -->
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-label-md text-on-surface-variant" for="nombre">Nombre Completo</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant">person</span>
+<input class="w-full bg-white/50 border border-white/50 rounded-lg pl-10 pr-4 py-3 font-body-md text-body-md text-on-surface placeholder:text-outline shadow-sm focus:bg-white/80 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 outline-none" id="nombre" name="nombre" placeholder="Ej. Ana García" required="" type="text"/>
+</div>
+</div>
+<!-- Input: Cédula -->
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-label-md text-on-surface-variant" for="cedula">Cédula de Identidad</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant">badge</span>
+<input class="w-full bg-white/50 border border-white/50 rounded-lg pl-10 pr-4 py-3 font-body-md text-body-md text-on-surface placeholder:text-outline shadow-sm focus:bg-white/80 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 outline-none" id="cedula" name="cedula" placeholder="Ej. 12345678" required="" type="text"/>
+</div>
+</div>
+<!-- Input: Sección -->
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-label-md text-on-surface-variant" for="seccion">Sección Asignada</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant">class</span>
+<select class="w-full bg-white/50 border border-white/50 rounded-lg pl-10 pr-10 py-3 font-body-md text-body-md text-on-surface shadow-sm focus:bg-white/80 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 outline-none appearance-none" id="seccion" name="seccion" required="">
+<option disabled="" selected="" value="">Seleccione una sección</option>
+<option value="A1">Sección A1</option>
+<option value="B2">Sección B2</option>
+<option value="C3">Sección C3</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Input: Representante -->
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-label-md text-on-surface-variant" for="representante">Nombre del Representante</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant">family_restroom</span>
+<input class="w-full bg-white/50 border border-white/50 rounded-lg pl-10 pr-4 py-3 font-body-md text-body-md text-on-surface placeholder:text-outline shadow-sm focus:bg-white/80 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 outline-none" id="representante" name="representante" placeholder="Ej. Carlos García" required="" type="text"/>
+</div>
+</div>
+<!-- Submit Button -->
+<button class="w-full mt-8 bg-[#3573A3] text-on-primary font-label-md text-label-md py-4 rounded-lg shadow-[0_4px_14px_0_rgba(37,91,118,0.39)] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(37,91,118,0.23)] active:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2" type="submit">
+<span class="material-symbols-outlined text-sm" data-icon="check_circle">check_circle</span>
+                    Registrar Asistencia
+                </button>
+</form>
+</div>
+<!-- Subtle Footer Note for Context -->
+<p class="text-center font-caption text-caption text-tertiary/70 mt-6">
+            Sistema de Gestión Académica Seguro
+        </p>
+</main>
+</body></html>

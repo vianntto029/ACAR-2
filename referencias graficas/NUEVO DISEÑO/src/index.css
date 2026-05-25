@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #255b76;
+  --color-primary-container: #417490;
+  --color-on-primary-container: #e6f4ff;
+  --color-secondary: #466275;
+  --color-secondary-container: #c6e4fa;
+  --color-tertiary: #445964;
+  --color-surface: #f8fafb;
+  --color-surface-dim: #d8dadb;
+  --color-surface-variant: #e1e3e4;
+  --color-on-surface: #191c1d;
+  --color-on-surface-variant: #41484d;
+  --color-outline: #71787d;
+  --color-outline-variant: #c1c7cd;
+  
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+
+  --animate-shimmer: shimmer 2s infinite;
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+}
+
+body {
+  background: white; /* Sidebar will sit on this */
+  font-family: var(--font-sans);
+  color: var(--color-on-surface);
+  min-height: 100vh;
+  margin: 0;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 30px 60px -15px rgba(37, 91, 118, 0.15);
+}
+
+.glass-panel-solid {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 12px 40px 0 rgba(4, 22, 39, 0.12);
+}
+
+.glass-button-secondary {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 1);
+  color: #041627;
+  transition: all 0.3s ease;
+}
+
+.glass-button-secondary:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(4, 22, 39, 0.05);
+}
+
