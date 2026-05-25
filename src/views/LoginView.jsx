@@ -21,10 +21,10 @@ export default function LoginView() {
       localStorage.setItem('admin-auth', 'true')
       navigate('/dashboard')
     } else if (user.trim() === '' && password.trim() === '') {
-      setError('Ingresa tu usuario y contrasena.')
+      setError('Ingresa tu usuario y contraseña.')
       setLoading(false)
     } else {
-      setError('Credenciales incorrectas. Verifica tu usuario y contrasena.')
+      setError('Credenciales incorrectas. Verifica tu usuario y contraseña.')
       setTimeout(() => setError(''), 3000)
       setLoading(false)
     }
@@ -100,7 +100,7 @@ export default function LoginView() {
 
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <label className="text-sm font-semibold text-secondary">Contrasena</label>
+                <label className="text-sm font-semibold text-secondary">Contraseña</label>
                 <button type="button" className="text-[#3573A3] text-xs font-semibold hover:underline bg-transparent border-none p-0 cursor-pointer transition-all">
                   Restablecer
                 </button>

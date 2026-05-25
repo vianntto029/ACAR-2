@@ -645,7 +645,7 @@ export default function Dashboard() {
             </div>
 
             <div className="p-4 border-t border-outline-variant/20 text-center bg-surface-variant/20 rounded-b-[2rem]">
-              <p className="text-xs text-outline font-bold tracking-widest uppercase">Ultima actualizacion: Ahora mismo</p>
+              <p className="text-xs text-outline font-bold tracking-widest uppercase">Última actualización: Ahora mismo</p>
             </div>
           </motion.div>
         </div>

@@ -250,15 +250,15 @@ export default function Ajustes() {
                 <h3 className="font-heading text-xl font-bold text-primary">Privacidad y Seguridad</h3>
                 <div className="space-y-4">
                   <div className="p-4 bg-white rounded-xl border border-surface-variant">
-                    <p className="font-bold text-primary mb-1">Cambiar Contrasena</p>
-                    <p className="text-sm text-secondary mb-3">Ultima actualizacion: hace 30 dias</p>
+                    <p className="font-bold text-primary mb-1">Cambiar Contraseña</p>
+                    <p className="text-sm text-secondary mb-3">Última actualización: hace 30 días</p>
                     <button className="bg-primary text-white px-4 py-2 rounded-lg font-bold text-sm hover:opacity-90 transition-all">
-                      Actualizar Contrasena
+                      Actualizar Contraseña
                     </button>
                   </div>
                   <div className="p-4 bg-white rounded-xl border border-surface-variant">
                     <p className="font-bold text-primary mb-1">Sesiones Activas</p>
-                    <p className="text-sm text-secondary">1 sesion activa actualmente</p>
+                    <p className="text-sm text-secondary">1 sesión activa actualmente</p>
                   </div>
                 </div>
               </div>
