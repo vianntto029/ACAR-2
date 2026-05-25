@@ -1,6 +1,6 @@
 import Layout from '../components/Layout'
 import { Plus, X, Check, User, Calendar, Clock, Flag, ListTodo, AlignLeft, Save, GripVertical, ZoomIn, ZoomOut, Trash2 } from 'lucide-react'
-import { useState, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 
 const priorityConfig = {
@@ -42,15 +42,14 @@ export default function Tablero() {
   const [detailModal, setDetailModal] = useState(null)
   const [editingCard, setEditingCard] = useState(null)
   const [newSubtaskText, setNewSubtaskText] = useState('')
-  const [dragState, setDragState] = useState(null)
+  const [mouseDrag, setMouseDrag] = useState(null)
   const [dropTarget, setDropTarget] = useState(null)
   const [columnDrag, setColumnDrag] = useState(null)
   const [columnDropIdx, setColumnDropIdx] = useState(null)
   const [showAddColumn, setShowAddColumn] = useState(false)
   const [newColName, setNewColName] = useState('')
   const [columnZoom, setColumnZoom] = useState('normal')
-  const dragNodeRef = useRef(null)
-  const isDragging = useRef(false)
+  const dragClickRef = useRef({ startX: 0, startY: 0, started: false })
 
   const zoom = zoomConfig[columnZoom]
 
@@ -91,70 +90,94 @@ export default function Tablero() {
     }))
   }
 
-  const handleDragStart = (e, cardId, colId) => {
-    isDragging.current = true
-    dragNodeRef.current = e.target
-    setDragState({ cardId, fromCol: colId })
-    e.dataTransfer.effectAllowed = 'move'
-
-    const rect = e.target.getBoundingClientRect()
-    const clone = e.target.cloneNode(true)
-    clone.style.position = 'fixed'
-    clone.style.top = rect.top + 'px'
-    clone.style.left = rect.left + 'px'
-    clone.style.width = rect.width + 'px'
-    clone.style.opacity = '1'
-    clone.style.pointerEvents = 'none'
-    clone.style.transform = 'scale(1.05) rotate(0.5deg)'
-    clone.style.boxShadow = '0 25px 60px rgba(0,0,0,0.25)'
-    clone.style.borderRadius = '12px'
-    clone.style.zIndex = '9999'
-    clone.style.transition = 'none'
-    clone.style.margin = '0'
-    document.body.appendChild(clone)
-    e.dataTransfer.setDragImage(clone, e.clientX - rect.left, e.clientY - rect.top)
-    requestAnimationFrame(() => {
-      if (clone.parentNode) document.body.removeChild(clone)
-    })
-  }
-
-  const handleDragEnd = () => {
-    isDragging.current = false
-    dragNodeRef.current = null
-    setDragState(null)
-    setDropTarget(null)
-  }
-
-  const handleDragOver = (e, colId) => {
-    if (columnDrag !== null) return
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    const colEl = e.currentTarget
+  const getDropIndex = (colId, mouseY) => {
+    const colEl = document.querySelector(`[data-column-id="${colId}"] .card-drop-zone`)
+    if (!colEl) return 0
     const cardEls = colEl.querySelectorAll('[data-card-id]')
-    let insertIndex = cardEls.length
     for (let i = 0; i < cardEls.length; i++) {
       const rect = cardEls[i].getBoundingClientRect()
-      if (e.clientY < rect.top + rect.height / 2) { insertIndex = i; break }
+      if (mouseY < rect.top + rect.height / 2) return i
     }
-    setDropTarget({ colId, index: insertIndex, cardId: cardEls[insertIndex]?.getAttribute('data-card-id') || null })
+    return cardEls.length
   }
 
-  const handleDragLeave = (e, colId) => {
-    if (columnDrag !== null) return
-    if (dropTarget?.colId === colId && !e.currentTarget.contains(e.relatedTarget)) {
-      setDropTarget(prev => prev?.colId === colId ? null : prev)
-    }
+  const findColumnAtPoint = (x, y) => {
+    const colEls = document.querySelectorAll('[data-column-id]')
+    let best = null
+    colEls.forEach(el => {
+      const r = el.getBoundingClientRect()
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) best = el.getAttribute('data-column-id')
+    })
+    return best
   }
 
-  const handleDrop = (e, colId) => {
-    e.preventDefault()
-    if (!dragState || columnDrag !== null) return
-    if (!cards[dragState.fromCol]?.some(c => c.id === dragState.cardId)) return
-    const dropIdx = dropTarget?.colId === colId ? dropTarget.index : (cards[colId]?.length || 0)
-    moveCard(dragState.cardId, dragState.fromCol, colId, dropIdx)
-    dragNodeRef.current = null
-    setDragState(null)
-    setDropTarget(null)
+  useEffect(() => {
+    if (!mouseDrag) return
+    const handleMouseMove = (e) => {
+      const newX = e.clientX
+      const newY = e.clientY
+      setMouseDrag(prev => prev ? { ...prev, x: newX, y: newY } : prev)
+      const targetColId = findColumnAtPoint(newX, newY)
+      if (targetColId) {
+        const idx = getDropIndex(targetColId, newY)
+        setDropTarget({ colId: targetColId, index: idx })
+      } else {
+        setDropTarget(null)
+      }
+    }
+    const handleMouseUp = () => {
+      if (!mouseDrag) return
+      const { cardId, fromCol } = mouseDrag
+      let targetColId = dropTarget?.colId || fromCol
+      let targetIdx = dropTarget?.index ?? (cards[targetColId]?.length || 0)
+      moveCard(cardId, fromCol, targetColId, targetIdx)
+      setMouseDrag(null)
+      setDropTarget(null)
+    }
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [mouseDrag, dropTarget])
+
+  const handleCardMouseDown = (e, card, colId) => {
+    if (e.button !== 0 || e.target.closest('button')) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    dragClickRef.current = { startX: e.clientX, startY: e.clientY, started: false, card, colId, rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height } }
+    const handleMove = (ev) => {
+      const dx = ev.clientX - dragClickRef.current.startX
+      const dy = ev.clientY - dragClickRef.current.startY
+      if (!dragClickRef.current.started && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+        dragClickRef.current.started = true
+        const r = dragClickRef.current.rect
+        setMouseDrag({
+          cardId: dragClickRef.current.card.id,
+          fromCol: dragClickRef.current.colId,
+          x: ev.clientX,
+          y: ev.clientY,
+          offsetX: ev.clientX - r.left,
+          offsetY: ev.clientY - r.top,
+          width: r.width,
+          height: r.height,
+        })
+      }
+      if (dragClickRef.current.started) {
+        ev.preventDefault()
+        ev.stopPropagation()
+      }
+    }
+    const handleUp = () => {
+      document.removeEventListener('mousemove', handleMove)
+      document.removeEventListener('mouseup', handleUp)
+      if (!dragClickRef.current.started) {
+        openDetailModal(card, colId)
+      }
+      dragClickRef.current.started = false
+    }
+    document.addEventListener('mousemove', handleMove)
+    document.addEventListener('mouseup', handleUp)
   }
 
   const handleColumnDragStart = (e, idx) => {
@@ -172,7 +195,7 @@ export default function Tablero() {
   }
 
   const handleColumnDragOver = (e, idx) => {
-    if (dragState !== null) return
+    if (mouseDrag !== null) return
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
     if (columnDrag !== null && columnDrag !== idx) setColumnDropIdx(idx)
@@ -204,7 +227,6 @@ export default function Tablero() {
   }
 
   const openDetailModal = (card, colId) => {
-    if (isDragging.current) return
     setDetailModal({ colId })
     setEditingCard(JSON.parse(JSON.stringify(card)))
     setNewSubtaskText('')
@@ -231,6 +253,7 @@ export default function Tablero() {
   const getPriority = (p) => priorityConfig[p] || priorityConfig.media
 
   return (
+    <>
     <Layout>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <div>
@@ -264,6 +287,7 @@ export default function Tablero() {
             return (
               <div
                 key={col.id}
+                data-column-id={col.id}
                 style={{ boxShadow: 'none' }}
                 className={`glass-panel-solid rounded-[2rem] p-3 transition-all ${dropTarget?.colId === col.id ? 'shadow-[0_0_0_2px_#3573A3]' : ''} ${isOver ? 'ring-2 ring-primary/60 scale-[1.02]' : ''}`}
               >
@@ -290,16 +314,11 @@ export default function Tablero() {
                     </div>
                   </div>
                 </div>
-                <div
-                  className="space-y-2 min-h-[150px]"
-                  onDragOver={(e) => handleDragOver(e, col.id)}
-                  onDragLeave={(e) => handleDragLeave(e, col.id)}
-                  onDrop={(e) => handleDrop(e, col.id)}
-                >
+                <div className="space-y-2 min-h-[150px] card-drop-zone">
                   <AnimatePresence>
                     {colCards.map((card, idx) => {
-                      const isDragSource = dragState?.cardId === card.id
-                      const hasDropAbove = dropTarget?.colId === col.id && dropTarget?.index === idx
+                      const isDraggingMe = mouseDrag?.cardId === card.id
+                      const hasDropAbove = dropTarget?.colId === col.id && dropTarget?.index === idx && !isDraggingMe
                       const pr = getPriority(card.priority)
                       return (
                         <div key={card.id}>
@@ -307,14 +326,12 @@ export default function Tablero() {
                           <motion.div
                             layout
                             initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0, scale: isDragSource ? 1.03 : 1 }}
+                            animate={isDraggingMe ? { opacity: 0, y: 0, scale: 0.95 } : { opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
                             data-card-id={card.id}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, card.id, col.id)}
-                            onDragEnd={handleDragEnd}
-                            onClick={() => openDetailModal(card, col.id)}
-                            className={`bg-white rounded-xl ${zoom.cardPadding} shadow-sm border border-surface-variant cursor-grab active:cursor-grabbing group hover:shadow-md hover:border-primary/30 transition-all ${zoom.textSize} ${isDragSource ? 'shadow-2xl rotate-[0.5deg] z-50 ring-2 ring-primary/30 scale-[1.03]' : ''}`}
+                            onMouseDown={(e) => handleCardMouseDown(e, card, col.id)}
+                            className={`bg-white rounded-xl ${zoom.cardPadding} shadow-sm border border-surface-variant cursor-grab active:cursor-grabbing group hover:shadow-md hover:border-primary/30 transition-shadow ${zoom.textSize}`}
+                            style={isDraggingMe ? { pointerEvents: 'none' } : {}}
                           >
                             <div className="flex justify-between items-start gap-2">
                               <div className="flex-1 min-w-0">
@@ -332,16 +349,14 @@ export default function Tablero() {
                               <button onClick={(e) => { e.stopPropagation(); handleDeleteCard(col.id, card.id) }} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all flex-shrink-0"><X className="w-3.5 h-3.5" /></button>
                             </div>
                             <div className="flex gap-1 mt-1.5">
-                              {columnOrder.some(c => c.id === col.id && c !== columnOrder[0]) && (
+                              {col !== columnOrder[0] && (
                                 <button onClick={(e) => { e.stopPropagation(); moveCard(card.id, col.id, columnOrder[0].id, cards[columnOrder[0].id]?.length || 0) }} className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">←</button>
                               )}
                               {col === columnOrder[columnOrder.length - 1] && (
                                 <button onClick={(e) => { e.stopPropagation(); moveCard(card.id, col.id, columnOrder[columnOrder.length - 1].id, cards[columnOrder[columnOrder.length - 1].id]?.length || 0) }} className="text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-600 hover:bg-green-200 transition-colors">Completar</button>
                               )}
                               {col !== columnOrder[0] && col !== columnOrder[columnOrder.length - 1] && (
-                                <>
-                                  <button onClick={(e) => { e.stopPropagation(); moveCard(card.id, col.id, columnOrder[columnOrder.indexOf(col) + 1].id, cards[columnOrder[columnOrder.indexOf(col) + 1].id]?.length || 0) }} className="text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-600 hover:bg-green-200 transition-colors">→</button>
-                                </>
+                                <button onClick={(e) => { e.stopPropagation(); moveCard(card.id, col.id, columnOrder[columnOrder.indexOf(col) + 1].id, cards[columnOrder[columnOrder.indexOf(col) + 1].id]?.length || 0) }} className="text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-600 hover:bg-green-200 transition-colors">→</button>
                               )}
                             </div>
                           </motion.div>
@@ -349,7 +364,7 @@ export default function Tablero() {
                       )
                     })}
                   </AnimatePresence>
-                  {dropTarget?.colId === col.id && dropTarget?.index >= colCards.length && (
+                  {dropTarget?.colId === col.id && dropTarget?.index >= colCards.length && mouseDrag && (
                     <div className="flex items-center gap-2 py-0.5"><div className="flex-1 h-1 bg-primary/40 rounded-full" /><div className="w-2 h-2 rounded-full bg-primary" /><div className="flex-1 h-1 bg-primary/40 rounded-full" /></div>
                   )}
                 </div>
@@ -511,5 +526,50 @@ export default function Tablero() {
         )}
       </AnimatePresence>
     </Layout>
+    {(() => {
+      if (!mouseDrag) return null
+      for (const colId of columnOrder.map(c => c.id)) {
+        const found = (cards[colId] || []).find(c => c.id === mouseDrag.cardId)
+        if (found) {
+          const pr = getPriority(found.priority)
+          return (
+            <div
+              key="floating-card"
+              style={{
+                position: 'fixed',
+                top: mouseDrag.y - mouseDrag.offsetY,
+                left: mouseDrag.x - mouseDrag.offsetX,
+                width: mouseDrag.width,
+                zIndex: 9999,
+                pointerEvents: 'none',
+                transform: 'scale(1.05) rotate(0.5deg)',
+                boxShadow: '0 25px 60px rgba(0,0,0,0.25)',
+                borderRadius: '12px',
+                background: 'white',
+                transition: 'none',
+              }}
+              className={`${zoom.cardPadding} ${zoom.textSize}`}
+            >
+              <div className="flex justify-between items-start gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <h4 className="font-bold text-primary truncate">{found.title}</h4>
+                    {found.priority && <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${pr.color}`}><Flag className="w-2.5 h-2.5 inline mr-0.5" />{pr.label}</span>}
+                  </div>
+                  {found.desc && <p className="text-secondary mt-0.5 line-clamp-2">{found.desc}</p>}
+                  <div className="flex flex-wrap gap-1.5 mt-1.5 text-secondary">
+                    {found.assignee && <span className="flex items-center gap-0.5 bg-gray-50 px-1.5 py-0.5 rounded text-[10px]"><User className="w-2.5 h-2.5" />{found.assignee}</span>}
+                    {found.dueDate && <span className="flex items-center gap-0.5 bg-gray-50 px-1.5 py-0.5 rounded text-[10px]"><Calendar className="w-2.5 h-2.5" />{found.dueDate}{found.dueTime ? ` ${found.dueTime}` : ''}</span>}
+                    {found.estTime && <span className="flex items-center gap-0.5 bg-gray-50 px-1.5 py-0.5 rounded text-[10px]"><Clock className="w-2.5 h-2.5" />{found.estTime}</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        }
+      }
+      return null
+    })()}
+    </>
   )
 }
