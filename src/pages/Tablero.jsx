@@ -312,14 +312,15 @@ export default function Tablero() {
             const colCards = cards[col.id] || []
             const colorClass = columnColors[colIdx % columnColors.length]
             const isColDragSource = mouseColDrag?.idx === colIdx
-            const isColDropTarget = mouseColDropIdx === colIdx && mouseColDrag && mouseColDrag.idx !== colIdx
+            const isBeforeDrop = mouseColDrag && !isColDragSource && mouseColDropIdx !== null && mouseColDropIdx - 1 === colIdx
+            const isAfterDrop = mouseColDrag && !isColDragSource && mouseColDropIdx === colIdx
             return (
               <div
                 key={col.id}
                 data-column-id={col.id}
                 onMouseDown={(e) => handleColumnMouseDown(e, colIdx)}
                 style={{ boxShadow: 'none' }}
-                className={`glass-panel-solid rounded-[2rem] p-3 transition-all ${dropTarget?.colId === col.id ? 'shadow-[0_0_0_2px_#3573A3]' : ''} ${isColDropTarget ? 'ring-2 ring-primary/60' : ''} ${isColDragSource ? 'opacity-0' : ''} cursor-grab`}
+                className={`glass-panel-solid rounded-[2rem] p-3 transition-all ${dropTarget?.colId === col.id ? 'shadow-[0_0_0_2px_#3573A3]' : ''} ${isColDragSource ? 'opacity-0' : ''} ${isAfterDrop ? 'ml-8' : ''} ${isBeforeDrop ? 'mr-8' : ''} cursor-grab`}
               >
                 <div className={`${colorClass} border rounded-xl mb-3 p-2 transition-shadow hover:shadow-md`}>
                   <div className="flex items-center justify-between gap-1">
