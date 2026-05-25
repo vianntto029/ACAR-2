@@ -1,5 +1,5 @@
 import Layout from '../components/Layout'
-import { Plus, X, Check, User, Calendar, Clock, Flag, ListTodo, AlignLeft, Save, GripVertical, ZoomIn, ZoomOut, Trash2 } from 'lucide-react'
+import { Plus, X, Check, User, Calendar, Clock, Flag, ListTodo, AlignLeft, Save, GripVertical, ZoomIn, ZoomOut, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 
@@ -46,6 +46,7 @@ export default function Tablero() {
   const [dropTarget, setDropTarget] = useState(null)
   const [mouseColDrag, setMouseColDrag] = useState(null)
   const [mouseColDropIdx, setMouseColDropIdx] = useState(null)
+  const [expandedSubtasks, setExpandedSubtasks] = useState({})
   const [showAddColumn, setShowAddColumn] = useState(false)
   const [newColName, setNewColName] = useState('')
   const [columnZoom, setColumnZoom] = useState('normal')
@@ -99,6 +100,10 @@ export default function Tablero() {
       if (mouseY < rect.top + rect.height / 2) return i
     }
     return cardEls.length
+  }
+
+  const toggleExpanded = (cardId) => {
+    setExpandedSubtasks(prev => ({ ...prev, [cardId]: !prev[cardId] }))
   }
 
   const findColumnAtPoint = (x, y) => {
@@ -370,8 +375,31 @@ export default function Tablero() {
                                   {card.estTime && <span className="flex items-center gap-0.5 bg-gray-50 px-1.5 py-0.5 rounded text-[10px]"><Clock className="w-2.5 h-2.5" />{card.estTime}</span>}
                                 </div>
                               </div>
-                              <button onClick={(e) => { e.stopPropagation(); handleDeleteCard(col.id, card.id) }} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all flex-shrink-0"><X className="w-3.5 h-3.5" /></button>
+                              <div className="flex items-start gap-1 flex-shrink-0">
+                                {card.subtasks?.length > 0 && (
+                                  <button onClick={(e) => { e.stopPropagation(); toggleExpanded(card.id) }} className="text-secondary/40 hover:text-primary transition-colors mt-0.5">
+                                    {expandedSubtasks[card.id] ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                                  </button>
+                                )}
+                                <button onClick={(e) => { e.stopPropagation(); handleDeleteCard(col.id, card.id) }} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all flex-shrink-0"><X className="w-3.5 h-3.5" /></button>
+                              </div>
                             </div>
+                            <AnimatePresence>
+                              {expandedSubtasks[card.id] && card.subtasks?.length > 0 && (
+                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                                  <div className="border-t border-surface-variant/50 mt-2 pt-2 space-y-1">
+                                    {card.subtasks.map(sub => (
+                                      <div key={sub.id} className="flex items-center gap-1.5">
+                                        <div className={`w-3 h-3 rounded border flex items-center justify-center flex-shrink-0 ${sub.done ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
+                                          {sub.done && <Check className="w-2 h-2 text-white" />}
+                                        </div>
+                                        <span className={`text-[11px] ${sub.done ? 'line-through text-gray-400' : 'text-secondary'}`}>{sub.text}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
                             <div className="flex gap-1 mt-1.5">
                               {col !== columnOrder[0] && (
                                 <button onClick={(e) => { e.stopPropagation(); moveCard(card.id, col.id, columnOrder[0].id, cards[columnOrder[0].id]?.length || 0) }} className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">←</button>
