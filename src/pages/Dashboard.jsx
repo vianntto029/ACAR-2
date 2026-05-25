@@ -688,6 +688,15 @@ export default function Dashboard() {
             >
               {exposicionMode ? 'Desactivar Vista' : 'Vista de Exposición'}
             </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setExposicionMode(false)}
+              className="bg-red-50 hover:bg-red-100 border border-red-100 text-red-600 px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Reiniciar
+            </motion.button>
           </div>
         </div>
 

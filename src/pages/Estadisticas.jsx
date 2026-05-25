@@ -1,5 +1,5 @@
 import Layout from '../components/Layout'
-import { BarChart3, TrendingUp, Users, Calendar, RefreshCw } from 'lucide-react'
+import { BarChart3, TrendingUp, Users, Calendar, RefreshCw, Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
@@ -23,10 +23,10 @@ const weeklyData = [
 ]
 
 export default function Estadisticas() {
-  const [exposicionMode, setExposicionMode] = useState(false)
+  const [exposicionMode, setExposicionMode] = useState(true)
 
   const handleReset = () => {
-    if (confirm('¿Reiniciar todas las estadísticas? Los datos de muestra serán restaurados.')) {
+    if (confirm('¿Reiniciar todas las estadísticas?')) {
       setExposicionMode(false)
     }
   }
@@ -48,8 +48,9 @@ export default function Estadisticas() {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => setExposicionMode(!exposicionMode)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${exposicionMode ? 'bg-yellow-400 text-yellow-900 shadow-sm' : 'bg-white border border-outline-variant text-secondary hover:text-primary'}`}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${exposicionMode ? 'bg-[#3573A3] text-white shadow-sm' : 'bg-white border border-outline-variant text-secondary hover:text-primary'}`}
             >
+              {exposicionMode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               {exposicionMode ? 'Desactivar Vista' : 'Vista de Exposición'}
             </motion.button>
             <motion.button
@@ -65,45 +66,6 @@ export default function Estadisticas() {
         </motion.div>
 
         {exposicionMode ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-[2rem] p-8 bg-[#fefce8] border-2 border-yellow-400">
-            <div className="flex items-center gap-3 mb-6">
-              <h4 className="text-secondary font-bold uppercase tracking-widest text-sm">ESTADÍSTICAS DE REFERENCIA</h4>
-              <span className="text-[10px] font-bold bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full uppercase tracking-wider">DEMO</span>
-            </div>
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  { label: 'Estudiantes Registrados', value: '1,247', sub: 'en el período', color: 'text-primary', bar: 'bg-primary' },
-                  { label: 'Asistencias Totales', value: '1,083', sub: '86.8% de promedio', color: 'text-[#10b981]', bar: 'bg-[#10b981]' },
-                  { label: 'Instituciones Activas', value: '8', sub: 'en todo el país', color: 'text-[#d8629d]', bar: 'bg-[#d8629d]' },
-                ].map((item, i) => (
-                  <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-yellow-100">
-                    <p className="text-xs text-secondary font-semibold uppercase tracking-wider mb-1">{item.label}</p>
-                    <p className={`font-heading text-4xl font-bold ${item.color} leading-none`}>{item.value}</p>
-                    <p className="text-xs text-secondary mt-1">{item.sub}</p>
-                    <div className="w-full bg-gray-100 rounded-full h-2 mt-3">
-                      <div className={`${item.bar} h-full rounded-full`} style={{ width: `${60 + i * 15}%` }}></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-yellow-100">
-                <p className="text-xs text-secondary font-semibold uppercase tracking-wider mb-3">Comparativa por Período</p>
-                <div className="flex items-end gap-4 h-32">
-                  {[{ label: 'Ene', v: 65 }, { label: 'Feb', v: 72 }, { label: 'Mar', v: 80 }, { label: 'Abr', v: 68 }, { label: 'May', v: 78 }, { label: 'Jun', v: 85 }, { label: 'Jul', v: 0 }].map((m, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                      <div className="w-full bg-[#3573A3]/20 rounded-t-lg" style={{ height: `${m.v * 1.5}px`, minHeight: m.v > 0 ? '8px' : '0' }}>
-                        {m.v > 0 && <div className="w-full bg-primary rounded-t-lg transition-all hover:opacity-80" style={{ height: `${m.v * 1.5}px` }}></div>}
-                      </div>
-                      <span className="text-[10px] font-bold text-secondary">{m.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <p className="text-center text-[10px] text-secondary/60 italic">* Datos de referencia con fines demostrativos</p>
-            </div>
-          </motion.div>
-        ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <motion.div
@@ -222,6 +184,52 @@ export default function Estadisticas() {
               </motion.div>
             </div>
           </>
+        ) : (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="glass-panel-solid rounded-2xl p-6 shadow-lg border-l-4 border-gray-200">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <p className="text-xs font-bold tracking-widest text-secondary uppercase mb-1">Total de Asistencias</p>
+                    <h3 className="text-4xl font-heading font-bold text-gray-300">0%</h3>
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-300 flex items-center justify-center">
+                    <Users className="w-5 h-5" />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-300 font-medium">Sin datos registrados</p>
+              </div>
+              <div className="glass-panel-solid rounded-2xl p-6 shadow-lg border-l-4 border-gray-200">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <p className="text-xs font-bold tracking-widest text-secondary uppercase mb-1">Promedio de Retardos</p>
+                    <h3 className="text-4xl font-heading font-bold text-gray-300">0%</h3>
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-300 flex items-center justify-center">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-300 font-medium">Sin datos registrados</p>
+              </div>
+              <div className="glass-panel-solid rounded-2xl p-6 shadow-lg border-l-4 border-gray-200">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <p className="text-xs font-bold tracking-widest text-secondary uppercase mb-1">Materias Activas</p>
+                    <h3 className="text-4xl font-heading font-bold text-gray-300">0</h3>
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-300 flex items-center justify-center">
+                    <BarChart3 className="w-5 h-5" />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-300 font-medium">Sin datos registrados</p>
+              </div>
+            </div>
+            <div className="glass-panel-solid rounded-2xl p-12 shadow-lg flex flex-col items-center justify-center text-center">
+              <BarChart3 className="w-16 h-16 text-gray-200 mb-4" />
+              <h3 className="font-heading text-xl font-bold text-gray-300 mb-2">Vista de Exposición Desactivada</h3>
+              <p className="text-secondary max-w-md">Activa la Vista de Exposición para mostrar las estadísticas de referencia con datos de muestra y gráficas interactivas.</p>
+            </div>
+          </motion.div>
         )}
       </div>
     </Layout>
