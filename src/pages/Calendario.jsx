@@ -15,9 +15,7 @@ export default function Calendario() {
   ])
   const [showEventModal, setShowEventModal] = useState(false)
   const [editingEventId, setEditingEventId] = useState(null)
-  const [dragEvent, setDragEvent] = useState(null)
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
-  const [dragRect, setDragRect] = useState(null)
+  const [mouseDrag, setMouseDrag] = useState(null)
   const [dropTargetDate, setDropTargetDate] = useState(null)
   const gridRef = useRef(null)
   const eventRefs = useRef({})
@@ -49,7 +47,7 @@ export default function Calendario() {
   }
 
   const openEditModal = (ev, e) => {
-    if (e) { e.stopPropagation(); if (dragEvent) return }
+    if (e) { e.stopPropagation(); if (mouseDrag) return }
     setEditingEventId(ev.id)
     setForm({ title: ev.title, date: ev.date, type: ev.type, color: ev.color, startTime: ev.startTime || '', endTime: ev.endTime || '', allDay: ev.allDay || false, location: ev.location || '', description: ev.description || '' })
     setShowEventModal(true)
@@ -85,21 +83,18 @@ export default function Calendario() {
     color: '#fff',
   })
 
-  const handleMouseDown = (ev, e) => {
+  const handleEventMouseDown = (ev, e) => {
     if (e.button !== 0) return
     e.stopPropagation()
     e.preventDefault()
     const el = eventRefs.current[ev.id]
     if (!el) return
     const rect = el.getBoundingClientRect()
-    setDragEvent(ev)
-    setDragOffset({ x: e.clientX - rect.left, y: e.clientY - rect.top })
-    setDragRect({ width: rect.width, height: rect.height })
+    setMouseDrag({ ...ev, x: e.clientX, y: e.clientY, offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top, width: rect.width })
   }
 
   const handleMouseMove = useCallback((e) => {
-    if (!dragEvent) return
-    setDragRect(prev => prev ? { ...prev } : null)
+    setMouseDrag(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : prev)
     if (gridRef.current) {
       const cells = gridRef.current.querySelectorAll('[data-date]')
       let found = null
@@ -111,26 +106,25 @@ export default function Calendario() {
       })
       setDropTargetDate(found)
     }
-  }, [dragEvent])
+  }, [])
 
   const handleMouseUp = useCallback(() => {
-    if (dragEvent && dropTargetDate && dropTargetDate !== dragEvent.date) {
-      setEvents(prev => prev.map(ev => ev.id === dragEvent.id ? { ...ev, date: dropTargetDate } : ev))
+    if (mouseDrag && dropTargetDate && dropTargetDate !== mouseDrag.date) {
+      setEvents(prev => prev.map(ev => ev.id === mouseDrag.id ? { ...ev, date: dropTargetDate } : ev))
     }
-    setDragEvent(null)
+    setMouseDrag(null)
     setDropTargetDate(null)
-    setDragRect(null)
-  }, [dragEvent, dropTargetDate])
+  }, [mouseDrag, dropTargetDate])
 
   useEffect(() => {
-    if (!dragEvent) return
+    if (!mouseDrag) return
     window.addEventListener('mousemove', handleMouseMove)
     window.addEventListener('mouseup', handleMouseUp)
     return () => {
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [dragEvent, handleMouseMove, handleMouseUp])
+  }, [mouseDrag, handleMouseMove, handleMouseUp])
 
   return (
     <Layout>
@@ -165,7 +159,7 @@ export default function Calendario() {
               const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
               const dayEvents = events.filter(e => e.date === dateStr)
               const isToday = dateStr === todayStr
-              const isDropTarget = dropTargetDate === dateStr && dragEvent
+              const isDropTarget = dropTargetDate === dateStr && mouseDrag
               return (
                 <div
                   key={day}
@@ -178,12 +172,12 @@ export default function Calendario() {
                   </span>
                   <div className="space-y-0.5 mt-1">
                     {dayEvents.slice(0, 2).map((ev) => {
-                      const isDragging = dragEvent?.id === ev.id
+                      const isDragging = mouseDrag?.id === ev.id
                       return (
                         <div
                           key={ev.id}
                           ref={el => { eventRefs.current[ev.id] = el }}
-                          onMouseDown={(e) => handleMouseDown(ev, e)}
+                          onMouseDown={(e) => handleEventMouseDown(ev, e)}
                           onClick={(e) => openEditModal(ev, e)}
                           style={getEventStyle(ev.color)}
                           className={`text-[10px] px-1.5 py-0.5 rounded font-semibold truncate border cursor-grab active:cursor-grabbing hover:opacity-80 transition-opacity ${isDragging ? 'opacity-0' : ''}`}
@@ -237,21 +231,22 @@ export default function Calendario() {
         </div>
       </div>
 
-      {dragEvent && dragRect && (
+      {mouseDrag && (
         <div
           className="fixed pointer-events-none z-[999] text-xs px-1.5 py-0.5 rounded font-semibold truncate border shadow-xl"
           style={{
-            ...getEventStyle(dragEvent.color),
+            ...getEventStyle(mouseDrag.color),
             position: 'fixed',
-            top: dragEvent.y !== undefined ? dragEvent.y - dragOffset.y : 0,
-            left: dragEvent.x !== undefined ? dragEvent.x - dragOffset.x : 0,
-            width: dragRect.width,
-            height: dragRect.height,
+            top: mouseDrag.y - mouseDrag.offsetY,
+            left: mouseDrag.x - mouseDrag.offsetX,
+            width: mouseDrag.width,
             transform: 'scale(1.05) rotate(0.5deg)',
             zIndex: 9999,
+            boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+            transition: 'none',
           }}
         >
-          {dragEvent.allDay ? dragEvent.title : `${dragEvent.startTime?.slice(0, 5) || ''} ${dragEvent.title}`}
+          {mouseDrag.allDay ? mouseDrag.title : `${mouseDrag.startTime?.slice(0, 5) || ''} ${mouseDrag.title}`}
         </div>
       )}
 
