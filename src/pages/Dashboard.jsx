@@ -232,7 +232,7 @@ export default function Dashboard() {
         { header: 'Fecha', key: 'date', width: 15 },
       ]
 
-      todayAttendance.forEach(a => {
+      displayAttendance.forEach(a => {
         sheet.addRow({
           name: a.name,
           nationalId: a.nationalId,
