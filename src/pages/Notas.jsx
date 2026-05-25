@@ -1,5 +1,5 @@
 import Layout from '../components/Layout'
-import { GraduationCap, Download, FileText, Search } from 'lucide-react'
+import { GraduationCap, Download, FileText, Search, Upload, Trash2, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import ExcelJS from 'exceljs'
@@ -18,8 +18,11 @@ export default function Notas() {
   const [editingStudent, setEditingStudent] = useState(null)
   const [editNotas, setEditNotas] = useState({ '1er': '', '2do': '', '3er': '' })
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [newStudent, setNewStudent] = useState({ name: '', '1er': '', '2do': '', '3er': '' })
+  const [students, setStudents] = useState(estudiantesNotas)
 
-  const filtered = estudiantesNotas.filter(s => {
+  const filtered = students.filter(s => {
     const match = s.name.toLowerCase().includes(searchTerm.toLowerCase())
     return match
   })
@@ -39,16 +42,62 @@ export default function Notas() {
     const n2 = parseFloat(editNotas['2do'])
     const n3 = parseFloat(editNotas['3er'])
     if (isNaN(n1) || isNaN(n2) || isNaN(n3)) return
-    estudiantesNotas.forEach(s => {
+    setStudents(prev => prev.map(s => {
       if (s.id === editingStudent.id) {
-        s.notas['1er'] = n1
-        s.notas['2do'] = n2
-        s.notas['3er'] = n3
-        s.promedio = Math.round(((n1 + n2 + n3) / 3) * 10) / 10
+        return { ...s, notas: { '1er': n1, '2do': n2, '3er': n3 }, promedio: Math.round(((n1 + n2 + n3) / 3) * 10) / 10 }
       }
-    })
+      return s
+    }))
     setShowEditModal(false)
     setEditingStudent(null)
+  }
+
+  const handleAddStudent = () => {
+    if (!newStudent.name.trim()) return
+    const n1 = parseFloat(newStudent['1er'])
+    const n2 = parseFloat(newStudent['2do'])
+    const n3 = parseFloat(newStudent['3er'])
+    if (isNaN(n1) || isNaN(n2) || isNaN(n3)) return
+    const id = String(Date.now())
+    setStudents(prev => [...prev, { id, name: newStudent.name.trim(), notas: { '1er': n1, '2do': n2, '3er': n3 }, promedio: Math.round(((n1 + n2 + n3) / 3) * 10) / 10 }])
+    setNewStudent({ name: '', '1er': '', '2do': '', '3er': '' })
+    setShowAddForm(false)
+  }
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = async (evt) => {
+      try {
+        const workbook = new ExcelJS.Workbook()
+        const buf = evt.target.result
+        await workbook.xlsx.load(buf)
+        const sheet = workbook.worksheets[0]
+        const rows = []
+        sheet.eachRow((row, rowIdx) => {
+          if (rowIdx === 1) return
+          const name = row.getCell(1).value
+          const t1 = parseFloat(row.getCell(2).value)
+          const t2 = parseFloat(row.getCell(3).value)
+          const t3 = parseFloat(row.getCell(4).value)
+          if (name && !isNaN(t1) && !isNaN(t2) && !isNaN(t3)) {
+            rows.push({ id: String(Date.now() + rows.length), name: String(name), notas: { '1er': t1, '2do': t2, '3er': t3 }, promedio: Math.round(((t1 + t2 + t3) / 3) * 10) / 10 })
+          }
+        })
+        if (rows.length > 0) setStudents(prev => [...prev, ...rows])
+      } catch (err) {
+        alert('Error al leer el archivo. Asegúrate de que sea un Excel válido con columnas: Nombre, 1er, 2do, 3er.')
+      }
+    }
+    reader.readAsArrayBuffer(file)
+    e.target.value = ''
+  }
+
+  const clearAll = () => {
+    if (window.confirm('¿Estás seguro de limpiar todos los datos de notas?')) {
+      setStudents([])
+    }
   }
 
   const getStatusText = (prom) => {
@@ -60,7 +109,6 @@ export default function Notas() {
   const exportExcel = async () => {
     const workbook = new ExcelJS.Workbook()
     const sheet = workbook.addWorksheet('Notas')
-
     sheet.columns = [
       { header: 'Estudiante', key: 'name', width: 30 },
       { header: '1er Trimestre', key: 't1', width: 16 },
@@ -69,7 +117,6 @@ export default function Notas() {
       { header: 'Promedio', key: 'prom', width: 14 },
       { header: 'Estado', key: 'status', width: 22 },
     ]
-
     const headerRow = sheet.getRow(1)
     headerRow.eachCell(cell => {
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 }
@@ -82,18 +129,9 @@ export default function Notas() {
         right: { style: 'thin', color: { argb: 'FFCCCCCC' } },
       }
     })
-
-    estudiantesNotas.forEach(s => {
-      sheet.addRow({
-        name: s.name,
-        t1: s.notas['1er'],
-        t2: s.notas['2do'],
-        t3: s.notas['3er'],
-        prom: s.promedio,
-        status: getStatusText(s.promedio).text,
-      })
+    students.forEach(s => {
+      sheet.addRow({ name: s.name, t1: s.notas['1er'], t2: s.notas['2do'], t3: s.notas['3er'], prom: s.promedio, status: getStatusText(s.promedio).text })
     })
-
     const buffer = await workbook.xlsx.writeBuffer()
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     const url = URL.createObjectURL(blob)
@@ -108,8 +146,8 @@ export default function Notas() {
 
   const exportPDF = () => {
     const win = window.open('', '_blank')
-    const statuses = estudiantesNotas.map(s => getStatusText(s.promedio).text)
-    const rows = estudiantesNotas.map((s, i) => `
+    const statuses = students.map(s => getStatusText(s.promedio).text)
+    const rows = students.map((s, i) => `
       <tr>
         <td>${s.name}</td>
         <td>${s.notas['1er']}</td>
@@ -119,7 +157,6 @@ export default function Notas() {
         <td>${statuses[i]}</td>
       </tr>
     `).join('')
-
     win.document.write(`
       <html>
       <head>
@@ -185,9 +222,25 @@ export default function Notas() {
         </div>
       </motion.div>
 
-      <div className="mb-4 relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-outline-variant w-5 h-5" />
-        <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar estudiante..." className="w-full max-w-md bg-white/90 border border-white/60 rounded-xl pl-12 pr-4 py-3 text-primary placeholder:text-outline shadow-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300 outline-none" />
+      <div className="mb-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+        <div className="relative flex-1 max-w-md w-full">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-outline-variant w-5 h-5" />
+          <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar estudiante..." className="w-full bg-white/90 border border-white/60 rounded-xl pl-12 pr-4 py-3 text-primary placeholder:text-outline shadow-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300 outline-none" />
+        </div>
+        <div className="flex gap-2">
+          <motion.button onClick={() => setShowAddForm(true)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="bg-[#3573A3] text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-sm hover:opacity-90 transition-all text-sm">
+            <Plus className="w-4 h-4" /> Subir manualmente
+          </motion.button>
+          <label className="cursor-pointer">
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="bg-white border border-outline-variant text-primary px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-sm hover:bg-surface transition-all text-sm">
+              <Upload className="w-4 h-4" /> Subir archivo
+            </motion.div>
+            <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileUpload} className="hidden" />
+          </label>
+          <motion.button onClick={clearAll} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="bg-red-50 border border-red-200 text-red-600 px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-sm hover:bg-red-100 transition-all text-sm">
+            <Trash2 className="w-4 h-4" /> Limpiar
+          </motion.button>
+        </div>
       </div>
 
       <div className="glass-panel-solid rounded-[2rem] overflow-hidden shadow-lg">
@@ -274,6 +327,37 @@ export default function Notas() {
               <div className="p-6 border-t border-surface-variant bg-surface flex justify-end gap-3">
                 <button onClick={() => setShowEditModal(false)} className="px-6 py-2.5 rounded-xl font-bold text-secondary hover:bg-surface-variant transition-colors">Cancelar</button>
                 <button onClick={handleSaveNotas} className="px-6 py-2.5 rounded-xl font-bold bg-[#3573A3] text-white hover:opacity-90 shadow-sm transition-all">Guardar Notas</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showAddForm && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/40 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-[2rem] w-full max-w-md overflow-hidden shadow-2xl border border-surface-variant">
+              <div className="p-6 border-b border-surface-variant bg-surface">
+                <h2 className="font-heading text-xl font-bold text-primary flex items-center gap-3">
+                  <Plus className="w-5 h-5" />
+                  Agregar Estudiante
+                </h2>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="text-sm font-semibold text-secondary block mb-1">Nombre del estudiante</label>
+                  <input type="text" value={newStudent.name} onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })} placeholder="Nombre y apellido" className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium" />
+                </div>
+                {['1er', '2do', '3er'].map(trim => (
+                  <div key={trim}>
+                    <label className="text-sm font-semibold text-secondary block mb-1">{trim} Trimestre</label>
+                    <input type="number" min="0" max="20" step="0.5" value={newStudent[trim]} onChange={(e) => setNewStudent({ ...newStudent, [trim]: e.target.value })} className="w-full bg-surface-variant/50 border border-surface-variant rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium" />
+                  </div>
+                ))}
+              </div>
+              <div className="p-6 border-t border-surface-variant bg-surface flex justify-end gap-3">
+                <button onClick={() => setShowAddForm(false)} className="px-6 py-2.5 rounded-xl font-bold text-secondary hover:bg-surface-variant transition-colors">Cancelar</button>
+                <button onClick={handleAddStudent} className="px-6 py-2.5 rounded-xl font-bold bg-[#3573A3] text-white hover:opacity-90 shadow-sm transition-all">Agregar</button>
               </div>
             </motion.div>
           </motion.div>
