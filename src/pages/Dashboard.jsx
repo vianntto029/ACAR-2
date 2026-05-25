@@ -11,8 +11,15 @@ import ExcelJS from 'exceljs'
 import { motion, AnimatePresence } from 'motion/react'
 
 export default function Dashboard() {
-  const { attendance, resetAttendance } = useAttendance()
+  const { attendance, resetAttendance, sessions, currentSessionId, createSession, setCurrentSessionId, getSessionsByDate, getAttendanceBySession } = useAttendance()
   const today = todayKey()
+  const [selectedDate, setSelectedDate] = useState(today)
+  const todaySessions = getSessionsByDate(selectedDate)
+  const sessionAttendance = currentSessionId ? getAttendanceBySession(currentSessionId) : []
+  const displayAttendance = currentSessionId ? sessionAttendance : attendance.filter(a => a.date === selectedDate)
+  const sessionTotal = displayAttendance.length
+  const sessionPct = totalStudents > 0 ? Math.round((sessionTotal / totalStudents) * 100) : 0
+  const [dateNav, setDateNav] = useState('today')
 
   const [selectedStudent, setSelectedStudent] = useState(null)
   const [showObservationModal, setShowObservationModal] = useState(false)
@@ -77,8 +84,11 @@ export default function Dashboard() {
     setActiveForm(null)
   }
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setQrStatus('active')
+    const sid = await createSession({ materia: currentMateria, instituto: currentInstituto, programa: currentPrograma })
+    setSelectedDate(today)
+    setDateNav('today')
   }
 
   const handleCancel = () => {
@@ -263,8 +273,8 @@ export default function Dashboard() {
   }
 
   const handleReset = () => {
-    if (confirm('Reiniciar la lista de hoy?')) {
-      resetAttendance(today)
+    if (confirm(`¿Reiniciar la lista del ${selectedDate}?`)) {
+      resetAttendance(selectedDate)
     }
   }
 
@@ -484,10 +494,10 @@ export default function Dashboard() {
             transition={{ delay: 0.2 }}
             className="glass-panel-solid rounded-[2rem] p-8 shadow-lg"
           >
-            <h4 className="text-xs text-secondary/80 uppercase tracking-widest font-bold mb-4">Resumen de Hoy</h4>
+            <h4 className="text-xs text-secondary/80 uppercase tracking-widest font-bold mb-4">{selectedDate === today ? 'Resumen de Hoy' : selectedDate}</h4>
             <div className="flex justify-between items-end">
               <div>
-                <span className="font-heading text-6xl font-bold text-primary leading-none">{attendanceCount}</span>
+                <span className="font-heading text-6xl font-bold text-primary leading-none">{sessionTotal}</span>
                 <span className="text-lg text-secondary font-medium ml-2">/ {totalStudents}</span>
               </div>
               <div>
@@ -497,12 +507,30 @@ export default function Dashboard() {
             <div className="w-full bg-surface-variant rounded-full h-3 mt-6 overflow-hidden border border-white/50">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${percentage}%` }}
+                animate={{ width: `${sessionPct}%` }}
                 transition={{ duration: 1, delay: 0.5 }}
                 className="bg-[#3573A3] h-full rounded-full relative overflow-hidden"
               >
                 <div className="absolute inset-0 bg-white/20 w-full h-full animate-[shimmer_2s_infinite]"></div>
               </motion.div>
+            </div>
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-secondary font-medium">Sesiones del día</span>
+                <span className="font-bold text-primary">{todaySessions.length}</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {todaySessions.map((s, i) => (
+                  <button
+                    key={s.id}
+                    onClick={() => setCurrentSessionId(s.id)}
+                    className={`text-[10px] px-2 py-1 rounded-lg font-semibold transition-all ${currentSessionId === s.id ? 'bg-primary text-white shadow-sm' : 'bg-surface-variant/50 text-secondary hover:text-primary'}`}
+                  >
+                    {s.materia || `Lista ${i + 1}`}
+                    <span className="ml-1 opacity-70">({getAttendanceBySession(s.id).length})</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </motion.div>
         </div>
@@ -519,9 +547,13 @@ export default function Dashboard() {
                 <div className="bg-white/90 px-2 py-1.5 rounded-xl flex items-center gap-2 shadow-sm border border-white w-full sm:max-w-[200px]">
                   <input
                     type="date"
-                    defaultValue={today}
+                    value={selectedDate}
+                    onChange={(e) => { setSelectedDate(e.target.value); setCurrentSessionId(null) }}
                     className="bg-transparent px-3 py-1.5 rounded-lg font-medium text-secondary focus:ring-2 focus:ring-primary focus:border-transparent outline-none cursor-pointer w-full text-sm"
                   />
+                  {selectedDate !== today && (
+                    <button onClick={() => { setSelectedDate(today); setCurrentSessionId(null) }} className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-lg whitespace-nowrap hover:bg-primary/20 transition-colors">Hoy</button>
+                  )}
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.02, x: 2 }}
@@ -594,9 +626,9 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/10 text-sm">
-                  {todayAttendance.length > 0 ? (
+                  {displayAttendance.length > 0 ? (
                     <>
-                      {todayAttendance.map((student, idx) => (
+                      {displayAttendance.map((student, idx) => (
                         <tr key={student.id} className="hover:bg-primary/5 transition-colors duration-200">
                           <td className="py-4 px-6 flex items-center gap-3">
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-inner border ${getBgClass(idx)}`}>
@@ -657,33 +689,18 @@ export default function Dashboard() {
         transition={{ delay: 0.3 }}
         className={`mt-6 mb-12 rounded-[2rem] p-8 shadow-lg w-full transition-all ${exposicionMode ? 'bg-[#fefce8] border-2 border-yellow-400' : 'glass-panel-solid'}`}
       >
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div className="flex items-center gap-3">
-            <h4 className="text-secondary font-bold uppercase tracking-widest text-sm">
-              {statsFilter === 'semanal' ? 'ESTADISTICAS SEMANALES' : statsFilter === 'trimestral' ? 'ESTADISTICAS TRIMESTRALES' : 'ESTADISTICAS DEL AÑO'}
-            </h4>
+            <h4 className="text-secondary font-bold uppercase tracking-widest text-sm">ESTADISTICAS DIARIAS — {selectedDate}</h4>
             {exposicionMode && (
               <span className="text-[10px] font-bold bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full uppercase tracking-wider">REFERENCIA</span>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex bg-white/80 rounded-xl border border-outline-variant/30 p-0.5 shadow-sm">
-              {['semanal', 'trimestral', 'anual'].map(f => (
-                <button key={f} onClick={() => { setStatsFilter(f); if (exposicionMode) setExposicionMode(false) }} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${statsFilter === f ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'}`}>
-                  {f === 'semanal' ? 'Semanal' : f === 'trimestral' ? 'Trimestral' : 'Año Académico'}
-                </button>
-              ))}
-            </div>
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              onClick={() => {
-                if (exposicionMode) {
-                  setExposicionMode(false)
-                } else {
-                  setExposicionMode(true)
-                }
-              }}
+              onClick={() => setExposicionMode(!exposicionMode)}
               className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${exposicionMode ? 'bg-yellow-400 text-yellow-900 shadow-sm' : 'bg-white border border-outline-variant text-secondary hover:text-primary'}`}
             >
               {exposicionMode ? 'Desactivar Vista' : 'Vista de Exposición'}
@@ -705,7 +722,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
                 { label: 'Estudiantes Registrados', value: '1,247', sub: 'en el período', color: 'text-primary', bar: 'bg-primary' },
-                { label: 'Asistencias Totales', value: '1,083', sub: `${statsPct}% de promedio`, color: 'text-[#10b981]', bar: 'bg-[#10b981]' },
+                { label: 'Asistencias Totales', value: '1,083', sub: `${sessionPct}% de la capacidad`, color: 'text-[#10b981]', bar: 'bg-[#10b981]' },
                 { label: 'Instituciones Activas', value: '8', sub: 'en todo el país', color: 'text-[#d8629d]', bar: 'bg-[#d8629d]' },
               ].map((item, i) => (
                 <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-yellow-100">
@@ -742,14 +759,14 @@ export default function Dashboard() {
                   Asistieron
                 </span>
                 <div className="flex items-end gap-2 text-primary font-bold">
-                  <span className="text-3xl font-heading leading-none">{statsCount}</span>
-                  <span className="text-lg opacity-80 pb-0.5">({statsPct}%)</span>
+                  <span className="text-3xl font-heading leading-none">{sessionTotal}</span>
+                  <span className="text-lg opacity-80 pb-0.5">({sessionPct}%)</span>
                 </div>
               </div>
               <div className="w-full bg-surface-variant rounded-full h-4 overflow-hidden border border-outline-variant/30">
-                <div className="bg-[#10b981] h-full transition-all duration-1000" style={{ width: `${statsPct}%` }}></div>
+                <div className="bg-[#10b981] h-full transition-all duration-1000" style={{ width: `${sessionPct}%` }}></div>
               </div>
-              <p className="text-xs text-secondary/70 mt-2 font-medium">{statsFilter === 'semanal' ? 'Últimos 7 días' : statsFilter === 'trimestral' ? 'Últimos 3 meses' : 'Año académico actual'} — {statsUniqueStudents} estudiantes únicos</p>
+              <p className="text-xs text-secondary/70 mt-2 font-medium">{selectedDate} — {displayAttendance.length} registros</p>
             </div>
             <div className="flex-1">
               <div className="flex justify-between items-center mb-3">
@@ -758,14 +775,14 @@ export default function Dashboard() {
                   Inasistencias
                 </span>
                 <div className="flex items-end gap-2 text-secondary font-bold">
-                  <span className="text-3xl font-heading leading-none">{Math.max(0, statsTotal - statsCount)}</span>
-                  <span className="text-lg opacity-80 pb-0.5">({100 - statsPct}%)</span>
+                  <span className="text-3xl font-heading leading-none">{Math.max(0, totalStudents - sessionTotal)}</span>
+                  <span className="text-lg opacity-80 pb-0.5">({100 - sessionPct}%)</span>
                 </div>
               </div>
               <div className="w-full bg-surface-variant rounded-full h-4 overflow-hidden border border-outline-variant/30">
-                <div className="bg-red-400 h-full transition-all duration-1000" style={{ width: `${100 - statsPct}%` }}></div>
+                <div className="bg-red-400 h-full transition-all duration-1000" style={{ width: `${100 - sessionPct}%` }}></div>
               </div>
-              <p className="text-xs text-secondary/70 mt-2 font-medium">Total esperado: {statsTotal} estudiantes</p>
+              <p className="text-xs text-secondary/70 mt-2 font-medium">Total esperado: {totalStudents} estudiantes</p>
             </div>
           </div>
         )}
