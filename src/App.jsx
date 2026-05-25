@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AttendanceProvider } from './context/AttendanceContext'
+import ErrorBoundary from './components/ErrorBoundary'
 import LoginView from './views/LoginView'
 import RegistroView from './views/RegistroView'
 import Dashboard from './pages/Dashboard'
@@ -22,7 +23,7 @@ export default function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginView />} />
           <Route path="/registro" element={<RegistroView />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
           <Route path="/programas" element={<Programas />} />
           <Route path="/institutos" element={<Institutos />} />
           <Route path="/materias" element={<Materias />} />

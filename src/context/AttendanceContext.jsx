@@ -58,12 +58,18 @@ export function AttendanceProvider({ children }) {
   useEffect(() => {
     const attendanceRef = ref(db, `institutos/${institutoActivo}/attendance`)
     const unsubscribe = onValue(attendanceRef, (snapshot) => {
-      const data = []
-      snapshot.forEach((child) => {
-        data.push({ ...child.val(), id: child.key })
-      })
-      data.sort((a, b) => b.date.localeCompare(a.date) || a.time.localeCompare(b.time))
-      setAttendance(data)
+      try {
+        const data = []
+        snapshot.forEach((child) => {
+          data.push({ ...child.val(), id: child.key })
+        })
+        data.sort((a, b) => b.date.localeCompare(a.date) || a.time.localeCompare(b.time))
+        setAttendance(data)
+      } catch (e) {
+        console.error('Attendance load error:', e)
+      }
+    }, (err) => {
+      console.error('Attendance Firebase error:', err)
     })
     return () => unsubscribe()
   }, [institutoActivo])
@@ -71,12 +77,18 @@ export function AttendanceProvider({ children }) {
   useEffect(() => {
     const sessionsRef = ref(db, `institutos/${institutoActivo}/sessions`)
     const unsubscribe = onValue(sessionsRef, (snapshot) => {
-      const data = []
-      snapshot.forEach((child) => {
-        data.push({ ...child.val(), id: child.key })
-      })
-      data.sort((a, b) => b.createdAt?.localeCompare?.(a.createdAt) || 0)
-      setSessions(data)
+      try {
+        const data = []
+        snapshot.forEach((child) => {
+          data.push({ ...child.val(), id: child.key })
+        })
+        data.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '') || 0)
+        setSessions(data)
+      } catch (e) {
+        console.error('Sessions load error:', e)
+      }
+    }, (err) => {
+      console.error('Sessions Firebase error:', err)
     })
     return () => unsubscribe()
   }, [institutoActivo])
