@@ -44,8 +44,8 @@ export default function Tablero() {
   const [newSubtaskText, setNewSubtaskText] = useState('')
   const [mouseDrag, setMouseDrag] = useState(null)
   const [dropTarget, setDropTarget] = useState(null)
-  const [columnDrag, setColumnDrag] = useState(null)
-  const [columnDropIdx, setColumnDropIdx] = useState(null)
+  const [mouseColDrag, setMouseColDrag] = useState(null)
+  const [mouseColDropIdx, setMouseColDropIdx] = useState(null)
   const [showAddColumn, setShowAddColumn] = useState(false)
   const [newColName, setNewColName] = useState('')
   const [columnZoom, setColumnZoom] = useState('normal')
@@ -180,36 +180,64 @@ export default function Tablero() {
     document.addEventListener('mouseup', handleUp)
   }
 
-  const handleColumnDragStart = (e, idx) => {
-    e.dataTransfer.effectAllowed = 'move'
-    setColumnDrag(idx)
-
-    const colEl = e.currentTarget.parentElement
-    if (!colEl) return
-    const rect = colEl.getBoundingClientRect()
-    const clone = colEl.cloneNode(true)
-    clone.style.cssText = 'position:fixed;top:' + rect.top + 'px;left:' + rect.left + 'px;width:' + rect.width + 'px;opacity:1;pointer-events:none;transform:scale(1.02) rotate(0.3deg);box-shadow:0 25px 60px rgba(0,0,0,0.2);border-radius:2rem;z-index:9999;transition:none;margin:0'
-    document.body.appendChild(clone)
-    e.dataTransfer.setDragImage(clone, e.clientX - rect.left, e.clientY - rect.top)
-    requestAnimationFrame(() => { if (clone.parentNode) document.body.removeChild(clone) })
+  const handleColumnMouseDown = (e, colIdx) => {
+    if (e.button !== 0) return
+    if (e.target.closest('button, [data-card-id], [draggable]')) return
+    const colEls = document.querySelectorAll('[data-column-id]')
+    if (colIdx >= colEls.length) return
+    const rect = colEls[colIdx].getBoundingClientRect()
+    setMouseColDrag({
+      idx: colIdx,
+      x: e.clientX,
+      y: e.clientY,
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top,
+      width: rect.width,
+      height: rect.height,
+    })
   }
 
-  const handleColumnDragOver = (e, idx) => {
-    if (mouseDrag !== null) return
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    if (columnDrag !== null && columnDrag !== idx) setColumnDropIdx(idx)
+  const getColDropIndex = (mx) => {
+    const els = document.querySelectorAll('[data-column-id]')
+    if (!els.length) return 0
+    const centers = Array.from(els).map(el => {
+      const r = el.getBoundingClientRect()
+      return r.left + r.width / 2
+    })
+    for (let i = 0; i < centers.length; i++) {
+      if (mx < centers[i]) return i
+    }
+    return centers.length
   }
 
-  const handleColumnDrop = () => {
-    if (columnDrag === null || columnDropIdx === null) return
-    const newOrder = [...columnOrder]
-    const [moved] = newOrder.splice(columnDrag, 1)
-    newOrder.splice(columnDropIdx, 0, moved)
-    setColumnOrder(newOrder)
-    setColumnDrag(null)
-    setColumnDropIdx(null)
-  }
+  useEffect(() => {
+    if (!mouseColDrag) return
+    const handleMove = (e) => {
+      setMouseColDrag(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : prev)
+      const idx = getColDropIndex(e.clientX)
+      setMouseColDropIdx(idx)
+    }
+    const handleUp = () => {
+      if (!mouseColDrag) return
+      const fromIdx = mouseColDrag.idx
+      let toIdx = mouseColDropIdx
+      if (toIdx !== null && toIdx !== fromIdx) {
+        const newOrder = [...columnOrder]
+        const [moved] = newOrder.splice(fromIdx, 1)
+        const insertAt = toIdx > fromIdx ? toIdx - 1 : toIdx
+        newOrder.splice(insertAt, 0, moved)
+        setColumnOrder(newOrder)
+      }
+      setMouseColDrag(null)
+      setMouseColDropIdx(null)
+    }
+    document.addEventListener('mousemove', handleMove)
+    document.addEventListener('mouseup', handleUp)
+    return () => {
+      document.removeEventListener('mousemove', handleMove)
+      document.removeEventListener('mouseup', handleUp)
+    }
+  }, [mouseColDrag, mouseColDropIdx])
 
   const handleAddColumn = () => {
     if (!newColName.trim()) return
@@ -283,22 +311,17 @@ export default function Tablero() {
           {columnOrder.map((col, colIdx) => {
             const colCards = cards[col.id] || []
             const colorClass = columnColors[colIdx % columnColors.length]
-            const isOver = columnDropIdx === colIdx && columnDrag !== null && columnDrag !== colIdx
+            const isColDragSource = mouseColDrag?.idx === colIdx
+            const isColDropTarget = mouseColDropIdx === colIdx && mouseColDrag && mouseColDrag.idx !== colIdx
             return (
               <div
                 key={col.id}
                 data-column-id={col.id}
+                onMouseDown={(e) => handleColumnMouseDown(e, colIdx)}
                 style={{ boxShadow: 'none' }}
-                className={`glass-panel-solid rounded-[2rem] p-3 transition-all ${dropTarget?.colId === col.id ? 'shadow-[0_0_0_2px_#3573A3]' : ''} ${isOver ? 'ring-2 ring-primary/60 scale-[1.02]' : ''}`}
+                className={`glass-panel-solid rounded-[2rem] p-3 transition-all ${dropTarget?.colId === col.id ? 'shadow-[0_0_0_2px_#3573A3]' : ''} ${isColDropTarget ? 'ring-2 ring-primary/60' : ''} ${isColDragSource ? 'opacity-0' : ''} cursor-grab`}
               >
-                <div
-                  draggable
-                  onDragStart={(e) => handleColumnDragStart(e, colIdx)}
-                  onDragOver={(e) => handleColumnDragOver(e, colIdx)}
-                  onDragEnd={handleColumnDrop}
-                  onDrop={handleColumnDrop}
-                  className={`${colorClass} border rounded-xl mb-3 p-2 transition-shadow hover:shadow-md cursor-grab active:cursor-grabbing`}
-                >
+                <div className={`${colorClass} border rounded-xl mb-3 p-2 transition-shadow hover:shadow-md`}>
                   <div className="flex items-center justify-between gap-1">
                     <div className="flex items-center gap-1 min-w-0">
                       <GripVertical className="w-3.5 h-3.5 text-secondary/40 flex-shrink-0" />
@@ -526,8 +549,7 @@ export default function Tablero() {
         )}
       </AnimatePresence>
     </Layout>
-    {(() => {
-      if (!mouseDrag) return null
+    {mouseDrag && (() => {
       for (const colId of columnOrder.map(c => c.id)) {
         const found = (cards[colId] || []).find(c => c.id === mouseDrag.cardId)
         if (found) {
@@ -569,6 +591,43 @@ export default function Tablero() {
         }
       }
       return null
+    })()}
+    {mouseColDrag && (() => {
+      const col = columnOrder[mouseColDrag.idx]
+      if (!col) return null
+      const colorClass = columnColors[mouseColDrag.idx % columnColors.length]
+      return (
+        <div
+          key="floating-col"
+          style={{
+            position: 'fixed',
+            top: mouseColDrag.y - mouseColDrag.offsetY,
+            left: mouseColDrag.x - mouseColDrag.offsetX,
+            width: mouseColDrag.width,
+            zIndex: 9998,
+            pointerEvents: 'none',
+            transform: 'scale(1.02) rotate(0.3deg)',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.2)',
+            borderRadius: '2rem',
+            background: 'rgba(255,255,255,0.95)',
+            backdropFilter: 'blur(24px)',
+            border: '1px solid rgba(255,255,255,0.8)',
+            padding: '12px',
+            transition: 'none',
+          }}
+        >
+          <div className={`${colorClass} border rounded-xl mb-3 p-2`}>
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center gap-1 min-w-0">
+                <GripVertical className="w-3.5 h-3.5 text-secondary/40 flex-shrink-0" />
+                <h3 className="font-bold text-primary text-center uppercase text-xs truncate">{col.title}</h3>
+              </div>
+              <span className="text-[10px] text-secondary font-semibold bg-white/60 px-1.5 py-0.5 rounded-full">{cards[col.id]?.length || 0}</span>
+            </div>
+          </div>
+          <div className="text-center text-secondary text-xs py-4 opacity-60">Arrastrando columna...</div>
+        </div>
+      )
     })()}
     </>
   )
