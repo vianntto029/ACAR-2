@@ -1,16 +1,8 @@
 <#
 .SYNOPSIS
-  Crea un backup completo del proyecto ACAR (código fuente + configuración).
-.DESCRIPTION
-  Genera un archivo ZIP con timestamp en la carpeta backups/ y, opcionalmente,
-  exporta la base de datos de Firebase Realtime Database como JSON.
+  Crea un backup completo del proyecto ACAR (codigo fuente + configuracion).
 .PARAMETER SkipFirebase
-  Omitir exportación de Firebase incluso si FIREBASE_SECRET está configurado.
-.PARAMETER OutputDir
-  Directorio donde guardar el backup (default: ../backups)
-.EXAMPLE
-  .\tools\backup.ps1
-  .\tools\backup.ps1 -SkipFirebase
+  Omitir exportacion de Firebase.
 #>
 
 param(
@@ -21,48 +13,54 @@ param(
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
 $Timestamp = Get-Date -Format 'yyyy-MM-dd_HHmmss'
-$ZipName = "ACAR_backup_$Timestamp.zip"
+$ZipName = "ACAR_backup_$Timestamp.tar.gz"
 $ZipPath = Join-Path $OutputDir $ZipName
 
-# Ensure output dir exists
 if (-not (Test-Path $OutputDir)) { New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null }
 
-Write-Host "=== ACAR Backup Tool ===" -ForegroundColor Cyan
+Write-Host '=== ACAR Backup Tool ===' -ForegroundColor Cyan
 Write-Host "Project : $ProjectRoot"
 Write-Host "Output  : $ZipPath"
 
-# --- Code backup (exclude node_modules, dist, .vercel) ---
-Write-Host "`n[1/2] Empaquetando código fuente..." -ForegroundColor Yellow
-try {
-  Compress-Archive -Path (Join-Path $ProjectRoot '*') -DestinationPath $ZipPath -CompressionLevel Optimal
-  Write-Host "  OK -> $ZipPath" -ForegroundColor Green
-} catch {
-  # If Compress-Archive fails on long paths, try with 7z if available
-  Write-Host "  Fallback: usando tar..." -ForegroundColor Yellow
-  $tarPath = "$ZipName.tar.gz"
-  $excludes = @('--exclude=node_modules', '--exclude=dist', '--exclude=.vercel/cache', '--exclude=backups')
-  & tar -czf "$OutputDir\$tarPath" $excludes -C $ProjectRoot .
-  Write-Host "  OK -> $OutputDir\$tarPath" -ForegroundColor Green
+Write-Host ''
+Write-Host '[1/2] Empaquetando codigo fuente...' -ForegroundColor Yellow
+
+$excludes = @(
+  '--exclude=node_modules',
+  '--exclude=dist',
+  '--exclude=.vercel',
+  '--exclude=backups',
+  '--exclude=.git'
+)
+
+& tar -czf $ZipPath $excludes -C $ProjectRoot .
+if ($LASTEXITCODE -eq 0) {
+  Write-Host '  OK' -ForegroundColor Green
+} else {
+  Write-Host '  ERROR: tar fallo' -ForegroundColor Red
+  exit 1
 }
 
-# --- Firebase DB export (optional) ---
 if (-not $SkipFirebase) {
   $secret = $env:FIREBASE_SECRET
   $projectId = $env:FIREBASE_PROJECT_ID
   if (-not $secret -or -not $projectId) {
-    Write-Host "`n[2/2] Firebase export SKIPPED — set FIREBASE_SECRET & FIREBASE_PROJECT_ID env vars" -ForegroundColor DarkYellow
+    Write-Host ''
+    Write-Host '[2/2] Firebase SKIPPED' -ForegroundColor DarkYellow
   } else {
-    Write-Host "`n[2/2] Exportando Firebase Realtime Database..." -ForegroundColor Yellow
+    Write-Host ''
+    Write-Host '[2/2] Exportando Firebase...' -ForegroundColor Yellow
     $jsonPath = Join-Path $OutputDir "ACAR_firebase_$Timestamp.json"
     try {
       $url = "https://$projectId-default-rtdb.firebaseio.com/.json?auth=$secret"
       Invoke-WebRequest -Uri $url -OutFile $jsonPath
-      Write-Host "  OK -> $jsonPath" -ForegroundColor Green
+      Write-Host '  OK' -ForegroundColor Green
     } catch {
-      Write-Host "  ERROR: No se pudo exportar Firebase: $_" -ForegroundColor Red
+      Write-Host "  ERROR: $_" -ForegroundColor Red
     }
   }
 }
 
-Write-Host "`n=== Backup completado ===" -ForegroundColor Cyan
+Write-Host ''
+Write-Host '=== Backup completado ===' -ForegroundColor Cyan
 Write-Host "Para restaurar: .\tools\recovery.ps1 -Source `"$ZipPath`"" -ForegroundColor Magenta
