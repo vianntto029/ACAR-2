@@ -5,13 +5,13 @@ import {
   RefreshCw, MessageSquare, X, FileText, Radio, Copy, ExternalLink
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
-import { useAttendance, todayKey } from '../context/AttendanceContext'
+import { useAttendance, todayKey, dailyCode } from '../context/AttendanceContext'
 import { db, ref, push } from '../firebase'
 import ExcelJS from 'exceljs'
 import { motion, AnimatePresence } from 'motion/react'
 
 export default function Dashboard() {
-  const { attendance, resetAttendance, sessions, currentSessionId, initSession, setCurrentSessionId, getSessionsByDate, getAttendanceBySession } = useAttendance()
+  const { attendance, resetAttendance, sessions, currentSessionId, initSession, setCurrentSessionId, getSessionsByDate, getAttendanceBySession, institutoActivo } = useAttendance()
   const today = todayKey()
   const [selectedDate, setSelectedDate] = useState(today)
   const uniqueIds = new Set(attendance.filter(a => a.nationalId).map(a => a.nationalId.toLowerCase()))
@@ -21,8 +21,8 @@ export default function Dashboard() {
   const sessionTotal = displayAttendance.length
   const totalStudents = Math.max(uniqueIds.size, sessionTotal > 0 ? sessionTotal : 0)
   const sessionPct = totalStudents > 0 ? Math.round((sessionTotal / totalStudents) * 100) : 0
-  const inasistenciasCount = Math.max(0, totalStudents - sessionTotal)
-  const inasistenciasColor = inasistenciasCount > 0 ? 'bg-red-400' : 'bg-gray-300'
+  const inasistenciasCount = sessionTotal > 0 ? Math.max(0, totalStudents - sessionTotal) : 0
+  const inasistenciasColor = sessionTotal > 0 && inasistenciasCount > 0 ? 'bg-red-400' : 'bg-gray-300'
   const [dateNav, setDateNav] = useState('today')
 
   const [selectedStudent, setSelectedStudent] = useState(null)
@@ -31,13 +31,19 @@ export default function Dashboard() {
   const [activeForm, setActiveForm] = useState(null)
   const [formValue, setFormValue] = useState('')
   const [currentMateria, setCurrentMateria] = useState(() => {
-    const saved = localStorage.getItem('acar_materia'); return saved !== null ? saved : ''
+    const saved = localStorage.getItem('acar_materia')
+    if (saved === 'Programa ACAR') { localStorage.removeItem('acar_materia'); return '' }
+    return saved !== null ? saved : ''
   })
   const [currentInstituto, setCurrentInstituto] = useState(() => {
-    const saved = localStorage.getItem('acar_instituto'); return saved !== null ? saved : ''
+    const saved = localStorage.getItem('acar_instituto')
+    if (saved === 'ACAR' || saved === 'Instituto ACAR') { localStorage.removeItem('acar_instituto'); return '' }
+    return saved !== null ? saved : ''
   })
   const [currentPrograma, setCurrentPrograma] = useState(() => {
-    const saved = localStorage.getItem('acar_programa'); return saved !== null ? saved : ''
+    const saved = localStorage.getItem('acar_programa')
+    if (saved === 'Programa ACAR') { localStorage.removeItem('acar_programa'); return '' }
+    return saved !== null ? saved : ''
   })
   const [isDownloading, setIsDownloading] = useState(false)
   const [showManualListModal, setShowManualListModal] = useState(false)
@@ -119,7 +125,7 @@ export default function Dashboard() {
     setManualStatus('Guardando...')
     try {
       for (const student of manualList) {
-        await push(ref(db, `institutos/FUNDMSJS/attendance`), {
+        await push(ref(db, `institutos/${institutoActivo}/attendance`), {
           name: student.name,
           subject: currentMateria || '',
           nationalId: 'MANUAL-' + student.id,
@@ -127,7 +133,7 @@ export default function Dashboard() {
           representante: '',
           date: today,
           time: new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false }),
-          code: `FUNDMSJS-${today}`,
+          code: dailyCode(today),
           instituto: currentInstituto || '',
         })
       }
@@ -180,7 +186,7 @@ export default function Dashboard() {
     setManualStatus('Guardando...')
     try {
       for (const student of selected) {
-        await push(ref(db, `institutos/FUNDMSJS/attendance`), {
+        await push(ref(db, `institutos/${institutoActivo}/attendance`), {
           name: student.name,
           subject: currentMateria || '',
           nationalId: student.cedula || 'EXCEL-' + student.id,
@@ -188,7 +194,7 @@ export default function Dashboard() {
           representante: '',
           date: today,
           time: new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false }),
-          code: `FUNDMSJS-${today}`,
+          code: dailyCode(today),
           instituto: currentInstituto || '',
         })
       }

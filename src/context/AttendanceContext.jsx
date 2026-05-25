@@ -47,7 +47,9 @@ function saveLocalSessions(sessions) {
 
 export function AttendanceProvider({ children }) {
   const [institutoActivo, setInstitutoActivo] = useState(() => {
-    return localStorage.getItem('instituto-activo') || INSTITUTOS[0].id
+    const saved = localStorage.getItem('instituto-activo')
+    if (saved === 'ACAR') { localStorage.removeItem('instituto-activo'); return INSTITUTOS[0].id }
+    return saved || INSTITUTOS[0].id
   })
   const [attendance, setAttendance] = useState([])
   const [localSessions, setLocalSessions] = useState(loadLocalSessions)
