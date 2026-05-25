@@ -96,12 +96,11 @@ export default function Tablero() {
     dragNodeRef.current = e.target
     setDragState({ cardId, fromCol: colId })
     e.dataTransfer.effectAllowed = 'move'
-    setTimeout(() => { if (e.target) e.target.style.opacity = '0.4' }, 0)
+    e.dataTransfer.setDragImage && e.dataTransfer.setDragImage(e.target, e.target.offsetWidth / 2, 20)
   }
 
   const handleDragEnd = () => {
     isDragging.current = false
-    if (dragNodeRef.current) dragNodeRef.current.style.opacity = '1'
     dragNodeRef.current = null
     setDragState(null)
     setDropTarget(null)
@@ -140,8 +139,8 @@ export default function Tablero() {
 
   const handleColumnDragStart = (e, idx) => {
     e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setDragImage && e.dataTransfer.setDragImage(e.target, e.target.offsetWidth / 2, 20)
     setColumnDrag(idx)
-    setTimeout(() => { if (e.target) e.target.style.opacity = '0.4' }, 0)
   }
 
   const handleColumnDragOver = (e, idx) => {
@@ -234,7 +233,7 @@ export default function Tablero() {
             const colorClass = columnColors[colIdx % columnColors.length]
             const isOver = columnDropIdx === colIdx && columnDrag !== null && columnDrag !== colIdx
             return (
-              <div key={col.id} className={`glass-panel-solid rounded-[2rem] p-3 shadow-lg transition-all ${dropTarget?.colId === col.id ? 'shadow-[0_0_0_2px_#3573A3]' : ''} ${isOver ? 'ring-2 ring-primary/60 scale-[1.02]' : ''}`}>
+              <div key={col.id} className={`glass-panel-solid rounded-[2rem] p-3 shadow-lg transition-all ${dropTarget?.colId === col.id ? 'shadow-[0_0_0_2px_#3573A3]' : ''} ${isOver ? 'ring-2 ring-primary/60 scale-[1.02]' : ''} ${columnDrag === colIdx ? 'shadow-2xl scale-[1.02] rotate-[0.3deg] z-50 ring-2 ring-primary/40' : ''}`}>
                 <div
                   draggable
                   onDragStart={(e) => handleColumnDragStart(e, colIdx)}
@@ -275,14 +274,14 @@ export default function Tablero() {
                           <motion.div
                             layout
                             initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: isDragSource ? 0.4 : 1, y: 0 }}
+                            animate={{ opacity: 1, y: 0, scale: isDragSource ? 1.03 : 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
                             data-card-id={card.id}
                             draggable
                             onDragStart={(e) => handleDragStart(e, card.id, col.id)}
                             onDragEnd={handleDragEnd}
                             onClick={() => openDetailModal(card, col.id)}
-                            className={`bg-white rounded-xl ${zoom.cardPadding} shadow-sm border border-surface-variant cursor-grab active:cursor-grabbing group hover:shadow-md hover:border-primary/30 transition-all ${zoom.textSize}`}
+                            className={`bg-white rounded-xl ${zoom.cardPadding} shadow-sm border border-surface-variant cursor-grab active:cursor-grabbing group hover:shadow-md hover:border-primary/30 transition-all ${zoom.textSize} ${isDragSource ? 'shadow-2xl rotate-[0.5deg] z-50 ring-2 ring-primary/30 scale-[1.03]' : ''}`}
                           >
                             <div className="flex justify-between items-start gap-2">
                               <div className="flex-1 min-w-0">
