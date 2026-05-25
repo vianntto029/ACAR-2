@@ -28,7 +28,7 @@ export default function Reportes() {
 
   const handleExportXLSX = async () => {
     const workbook = new ExcelJS.Workbook()
-    workbook.creator = 'ACAR'
+    workbook.creator = 'FUNDMSJS'
     workbook.created = new Date()
 
     const sheet = workbook.addWorksheet('Reporte General')
@@ -61,7 +61,7 @@ export default function Reportes() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `ACAR_Reporte_${today}.xlsx`
+    a.download = `FUNDMSJS_Reporte_${today}.xlsx`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -116,7 +116,7 @@ export default function Reportes() {
                   onChange={(e) => setFilters({ ...filters, institucion: e.target.value })}
                 >
                   <option>Todas las Instituciones</option>
-                  <option>Programa ACAR</option>
+                  <option>FUNDMSJS</option>
                 </select>
               </div>
 
@@ -130,7 +130,7 @@ export default function Reportes() {
                   onChange={(e) => setFilters({ ...filters, programa: e.target.value })}
                 >
                   <option>Todos los Programas</option>
-                  <option>Programa ACAR</option>
+                  <option>FUNDMSJS</option>
                 </select>
               </div>
 

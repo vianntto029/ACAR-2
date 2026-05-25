@@ -167,7 +167,7 @@ export default function Layout({ children }) {
       >
         <header className="bg-white/40 backdrop-blur-xl border-b border-white/40 shadow-sm flex justify-between items-center px-6 h-16 flex-shrink-0 z-30">
           <div className="md:hidden flex items-center">
-            <span className="font-heading text-lg font-bold text-primary">ACAR</span>
+            <span className="font-heading text-lg font-bold text-primary">FUNDMSJS</span>
           </div>
           <nav className="hidden lg:flex items-center gap-8 h-full">
             <NavLink to="/dashboard" className={({ isActive }) => `font-bold h-full flex items-center transition-colors uppercase tracking-wide text-sm ${isActive ? 'text-primary border-b-2 border-primary' : 'text-secondary hover:text-primary'}`}>PANEL DE CONTROL</NavLink>
@@ -207,8 +207,8 @@ export default function Layout({ children }) {
 
           <footer className="mt-10 py-6 border-t border-white/20 max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-white/90 text-xs uppercase tracking-wide font-medium">
             <div className="mb-4 md:mb-0">
-              <span className="font-bold text-white mr-2">ACAR</span>
-              <span className="text-white/80">2026 Fundacion Mochila de Suenos & Programa ACAR. Todos los derechos reservados.</span>
+              <span className="font-bold text-white mr-2">FUNDMSJS</span>
+              <span className="text-white/80">2026 Fundacion Mochila de Suenos & FUNDMSJS. Todos los derechos reservados.</span>
             </div>
             <div className="flex gap-6 font-bold text-white/80">
               <a href="#" className="hover:text-white transition-colors">Privacidad</a>

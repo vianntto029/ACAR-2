@@ -309,7 +309,7 @@ export default function Programas() {
                     value={newForm.name}
                     onChange={(e) => setNewForm({ ...newForm, name: e.target.value })}
                     className="w-full bg-white border border-outline-variant p-3 rounded-xl focus:border-primary outline-none"
-                    placeholder="Ej. Programa ACAR"
+                    placeholder="Ej. FUNDMSJS"
                   />
                 </div>
                 <div className="space-y-2">

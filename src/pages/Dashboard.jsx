@@ -14,12 +14,15 @@ export default function Dashboard() {
   const { attendance, resetAttendance, sessions, currentSessionId, initSession, setCurrentSessionId, getSessionsByDate, getAttendanceBySession } = useAttendance()
   const today = todayKey()
   const [selectedDate, setSelectedDate] = useState(today)
-  const totalStudents = 30
+  const uniqueIds = new Set(attendance.filter(a => a.nationalId).map(a => a.nationalId.toLowerCase()))
   const todaySessions = getSessionsByDate(selectedDate)
   const sessionAttendance = currentSessionId ? getAttendanceBySession(currentSessionId) : []
   const displayAttendance = currentSessionId ? sessionAttendance : attendance.filter(a => a.date === selectedDate)
   const sessionTotal = displayAttendance.length
+  const totalStudents = Math.max(uniqueIds.size, sessionTotal > 0 ? sessionTotal : 0)
   const sessionPct = totalStudents > 0 ? Math.round((sessionTotal / totalStudents) * 100) : 0
+  const inasistenciasCount = Math.max(0, totalStudents - sessionTotal)
+  const inasistenciasColor = inasistenciasCount > 0 ? 'bg-red-400' : 'bg-gray-300'
   const [dateNav, setDateNav] = useState('today')
 
   const [selectedStudent, setSelectedStudent] = useState(null)
@@ -28,10 +31,10 @@ export default function Dashboard() {
   const [activeForm, setActiveForm] = useState(null)
   const [formValue, setFormValue] = useState('')
   const [currentMateria, setCurrentMateria] = useState(() => {
-    const saved = localStorage.getItem('acar_materia'); return saved !== null ? saved : 'Programa ACAR'
+    const saved = localStorage.getItem('acar_materia'); return saved !== null ? saved : ''
   })
   const [currentInstituto, setCurrentInstituto] = useState(() => {
-    const saved = localStorage.getItem('acar_instituto'); return saved !== null ? saved : 'Programa ACAR'
+    const saved = localStorage.getItem('acar_instituto'); return saved !== null ? saved : ''
   })
   const [currentPrograma, setCurrentPrograma] = useState(() => {
     const saved = localStorage.getItem('acar_programa'); return saved !== null ? saved : ''
@@ -116,16 +119,16 @@ export default function Dashboard() {
     setManualStatus('Guardando...')
     try {
       for (const student of manualList) {
-        await push(ref(db, `institutos/ACAR/attendance`), {
+        await push(ref(db, `institutos/FUNDMSJS/attendance`), {
           name: student.name,
-          subject: currentMateria || 'Programa ACAR',
+          subject: currentMateria || '',
           nationalId: 'MANUAL-' + student.id,
           seccion: student.seccion,
           representante: '',
           date: today,
           time: new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false }),
-          code: `ACAR-${today}`,
-          instituto: currentInstituto || 'Programa ACAR',
+          code: `FUNDMSJS-${today}`,
+          instituto: currentInstituto || '',
         })
       }
       setManualStatus(`${manualList.length} estudiante(s) registrado(s) en Firebase`)
@@ -177,16 +180,16 @@ export default function Dashboard() {
     setManualStatus('Guardando...')
     try {
       for (const student of selected) {
-        await push(ref(db, `institutos/ACAR/attendance`), {
+        await push(ref(db, `institutos/FUNDMSJS/attendance`), {
           name: student.name,
-          subject: currentMateria || 'Programa ACAR',
+          subject: currentMateria || '',
           nationalId: student.cedula || 'EXCEL-' + student.id,
           seccion: 'Cargado',
           representante: '',
           date: today,
           time: new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false }),
-          code: `ACAR-${today}`,
-          instituto: currentInstituto || 'Programa ACAR',
+          code: `FUNDMSJS-${today}`,
+          instituto: currentInstituto || '',
         })
       }
       setManualStatus(`${selected.length} estudiante(s) registrado(s) como ASISTENTE(S)`)
@@ -205,7 +208,7 @@ export default function Dashboard() {
     setIsDownloading(true)
     try {
       const workbook = new ExcelJS.Workbook()
-      workbook.creator = 'ACAR'
+      workbook.creator = 'FUNDMSJS'
       workbook.created = new Date()
 
       const sheet = workbook.addWorksheet('Asistencia')
@@ -240,7 +243,7 @@ export default function Dashboard() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `ACAR_Asistencia_${today}.xlsx`
+      a.download = `FUNDMSJS_Asistencia_${today}.xlsx`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -354,7 +357,7 @@ export default function Dashboard() {
                   <Library className="w-4 h-4" />
                   Agregar Materia
                 </motion.button>
-                {currentMateria !== 'Programa ACAR' && (
+                {currentMateria !== '' && (
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -750,16 +753,16 @@ export default function Dashboard() {
             <div className="flex-1">
               <div className="flex justify-between items-center mb-3">
                 <span className="text-secondary font-bold text-lg flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                  <div className={`w-3 h-3 rounded-full ${inasistenciasColor}`}></div>
                   Inasistencias
                 </span>
                 <div className="flex items-end gap-2 text-secondary font-bold">
-                  <span className="text-3xl font-heading leading-none">{Math.max(0, totalStudents - sessionTotal)}</span>
+                  <span className="text-3xl font-heading leading-none">{inasistenciasCount}</span>
                   <span className="text-lg opacity-80 pb-0.5">({100 - sessionPct}%)</span>
                 </div>
               </div>
               <div className="w-full bg-surface-variant rounded-full h-4 overflow-hidden border border-outline-variant/30">
-                <div className="bg-red-400 h-full transition-all duration-1000" style={{ width: `${100 - sessionPct}%` }}></div>
+                <div className={`${inasistenciasColor} h-full transition-all duration-1000`} style={{ width: `${100 - sessionPct}%` }}></div>
               </div>
               <p className="text-xs text-secondary/70 mt-2 font-medium">Total esperado: {totalStudents} estudiantes</p>
             </div>

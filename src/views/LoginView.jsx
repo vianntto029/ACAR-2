@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { User, Lock, Mail, AlertCircle } from 'lucide-react'
 import { motion } from 'motion/react'
 
-const ADMIN_PASSWORD = 'acar2026'
+const ADMIN_PASSWORD = 'fundmsjs2026'
 const ADMIN_USER = 'fundacion2026'
 
 export default function LoginView() {
@@ -46,7 +46,7 @@ export default function LoginView() {
         className="w-full max-w-[400px] z-10"
       >
         <div className="glass-panel-solid rounded-xl p-8 md:p-10 text-center shadow-xl">
-          <h1 className="font-heading text-3xl font-semibold text-primary mb-2">Plataforma ACAR</h1>
+          <h1 className="font-heading text-3xl font-semibold text-primary mb-2">Plataforma Educativa FUNDMSJS</h1>
           <p className="text-secondary mb-6">Acceso administrativo seguro.</p>
 
           <motion.button
@@ -111,7 +111,7 @@ export default function LoginView() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="acar2026"
+                  placeholder="fundmsjs2026"
                   className="w-full bg-white/70 border border-white/60 rounded-lg pl-10 pr-4 py-3 text-primary placeholder:text-outline shadow-sm focus:bg-white focus:border-[#3573A3] focus:ring-2 focus:ring-[#3573A3]/20 transition-all duration-300 outline-none"
                   required
                 />
@@ -137,7 +137,7 @@ export default function LoginView() {
           transition={{ delay: 0.3 }}
           className="text-center text-xs text-white/90 font-semibold mt-8"
         >
-          &copy; 2026 Fundacion Mochila de Suenos & Programa ACAR.<br/>Entorno Seguro.
+          &copy; 2026 Fundacion Mochila de Suenos & FUNDMSJS.<br/>Entorno Seguro.
         </motion.p>
       </motion.main>
     </div>

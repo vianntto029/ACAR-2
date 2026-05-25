@@ -23,7 +23,7 @@ export default function StudentView() {
 
   const code = dailyCode(todayKey())
   const institutoInfo = INSTITUTOS.find(i => i.id === institutoQR)
-  const institutoNombre = institutoInfo?.nombre || 'Programa ACAR Sabatino'
+  const institutoNombre = institutoInfo?.nombre || 'Fundación MSJS'
 
   useEffect(() => {
     if (registered && !showSuccess) {

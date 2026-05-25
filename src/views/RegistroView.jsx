@@ -10,7 +10,7 @@ export default function RegistroView() {
 
   const urlParams = new URLSearchParams(window.location.search)
   const isQR = urlParams.has('materia')
-  const materiaParam = urlParams.get('materia') || 'Programa ACAR'
+  const materiaParam = urlParams.get('materia') || ''
 
   const [form, setForm] = useState({
     name: '',

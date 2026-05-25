@@ -4,7 +4,7 @@ import { db, ref, push, onValue, remove, get } from '../firebase'
 const AttendanceContext = createContext(null)
 
 export const INSTITUTOS = [
-  { id: 'ACAR', nombre: 'Programa ACAR Sabatino' },
+  { id: 'FUNDMSJS', nombre: 'Fundación MSJS' },
 ]
 
 export function todayKey() {
@@ -26,7 +26,7 @@ export function currentTime() {
 }
 
 export function dailyCode(date) {
-  return `ACAR-${date}`
+  return `FUNDMSJS-${date}`
 }
 
 export function useAttendance() {

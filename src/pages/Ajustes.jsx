@@ -7,8 +7,8 @@ const STORAGE_KEY = 'acar-profile'
 
 const defaultProfile = {
   nombres: 'Administrador',
-  apellidos: 'ACAR',
-  email: 'admin@acar.edu.co',
+  apellidos: 'FUNDMSJS',
+  email: 'admin@fundmsjs.org',
   telefono: '',
   cargo: '',
   institucion: 'Fundacion Mochila de Suenos',
