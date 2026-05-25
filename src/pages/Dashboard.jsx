@@ -48,11 +48,10 @@ export default function Dashboard() {
   const fileInputRef = useRef(null)
   const qrLinkRef = useRef(null)
   const [exposicionMode, setExposicionMode] = useState(false)
+  const totalStudents = 30
   useEffect(() => { localStorage.setItem('acar_materia', currentMateria) }, [currentMateria])
   useEffect(() => { localStorage.setItem('acar_instituto', currentInstituto) }, [currentInstituto])
   useEffect(() => { localStorage.setItem('acar_programa', currentPrograma) }, [currentPrograma])
-
-  const totalStudents = 30
 
   const handleSave = async () => {
     if (!formValue.trim()) return
