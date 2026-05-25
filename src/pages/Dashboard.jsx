@@ -14,6 +14,7 @@ export default function Dashboard() {
   const { attendance, resetAttendance, sessions, currentSessionId, initSession, setCurrentSessionId, getSessionsByDate, getAttendanceBySession } = useAttendance()
   const today = todayKey()
   const [selectedDate, setSelectedDate] = useState(today)
+  const totalStudents = 30
   const todaySessions = getSessionsByDate(selectedDate)
   const sessionAttendance = currentSessionId ? getAttendanceBySession(currentSessionId) : []
   const displayAttendance = currentSessionId ? sessionAttendance : attendance.filter(a => a.date === selectedDate)
@@ -48,7 +49,6 @@ export default function Dashboard() {
   const fileInputRef = useRef(null)
   const qrLinkRef = useRef(null)
   const [exposicionMode, setExposicionMode] = useState(false)
-  const totalStudents = 30
   useEffect(() => { localStorage.setItem('acar_materia', currentMateria) }, [currentMateria])
   useEffect(() => { localStorage.setItem('acar_instituto', currentInstituto) }, [currentInstituto])
   useEffect(() => { localStorage.setItem('acar_programa', currentPrograma) }, [currentPrograma])
