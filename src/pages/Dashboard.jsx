@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Layout from '../components/Layout'
 import {
   Building, Library, QrCode, Users, Download, User, Check, AlertCircle,
@@ -48,31 +48,11 @@ export default function Dashboard() {
   const fileInputRef = useRef(null)
   const qrLinkRef = useRef(null)
   const [exposicionMode, setExposicionMode] = useState(false)
-  const [statsFilter, setStatsFilter] = useState('semanal')
-
-  const statsFiltered = useMemo(() => {
-    const now = new Date()
-    let start
-    if (statsFilter === 'semanal') { start = new Date(now); start.setDate(start.getDate() - 7) }
-    else if (statsFilter === 'trimestral') { start = new Date(now); start.setMonth(start.getMonth() - 3) }
-    else { start = new Date(now.getFullYear(), 0, 1) }
-    const startKey = start.toISOString().split('T')[0]
-    return attendance.filter(a => a.date >= startKey)
-  }, [attendance, statsFilter])
-
-  const statsUniqueStudents = new Set(statsFiltered.map(a => a.nationalId)).size
-  const statsCount = statsFiltered.length
-  const statsTotal = statsUniqueStudents || 30
-  const statsPct = statsTotal > 0 ? Math.round((statsCount / statsTotal) * 100) : 0
-
   useEffect(() => { localStorage.setItem('acar_materia', currentMateria) }, [currentMateria])
   useEffect(() => { localStorage.setItem('acar_instituto', currentInstituto) }, [currentInstituto])
   useEffect(() => { localStorage.setItem('acar_programa', currentPrograma) }, [currentPrograma])
 
-  const todayAttendance = attendance.filter(a => a.date === today)
-  const attendanceCount = todayAttendance.length
   const totalStudents = 30
-  const percentage = totalStudents > 0 ? Math.round((attendanceCount / totalStudents) * 100) : 0
 
   const handleSave = async () => {
     if (!formValue.trim()) return
