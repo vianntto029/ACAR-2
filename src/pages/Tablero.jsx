@@ -325,7 +325,7 @@ export default function Tablero() {
                 data-column-id={col.id}
                 onMouseDown={(e) => handleColumnMouseDown(e, colIdx)}
                 style={{ boxShadow: 'none' }}
-                className={`glass-panel-solid rounded-[2rem] p-3 transition-all ${dropTarget?.colId === col.id ? 'shadow-[0_0_0_2px_#3573A3]' : ''} ${isColDragSource ? 'opacity-0' : ''} ${isAfterDrop ? 'ml-8' : ''} ${isBeforeDrop ? 'mr-8' : ''} cursor-grab`}
+                className={`glass-panel-solid rounded-[2rem] p-3 transition-all select-none ${dropTarget?.colId === col.id ? 'shadow-[0_0_0_2px_#3573A3]' : ''} ${isColDragSource ? 'opacity-0' : ''} ${isAfterDrop ? 'ml-8' : ''} ${isBeforeDrop ? 'mr-8' : ''} cursor-grab`}
               >
                 <div className={`${colorClass} border rounded-xl mb-3 p-2 transition-shadow hover:shadow-md`}>
                   <div className="flex items-center justify-between gap-1">
@@ -359,7 +359,7 @@ export default function Tablero() {
                             exit={{ opacity: 0, scale: 0.9 }}
                             data-card-id={card.id}
                             onMouseDown={(e) => handleCardMouseDown(e, card, col.id)}
-                            className={`bg-white rounded-xl ${zoom.cardPadding} shadow-sm border border-surface-variant cursor-grab active:cursor-grabbing group hover:shadow-md hover:border-primary/30 transition-shadow ${zoom.textSize}`}
+                            className={`bg-white rounded-xl select-none ${zoom.cardPadding} shadow-sm border border-surface-variant cursor-grab active:cursor-grabbing group hover:shadow-md hover:border-primary/30 transition-shadow ${zoom.textSize}`}
                             style={isDraggingMe ? { pointerEvents: 'none' } : {}}
                           >
                             <div className="flex justify-between items-start gap-2">
