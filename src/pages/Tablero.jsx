@@ -96,7 +96,26 @@ export default function Tablero() {
     dragNodeRef.current = e.target
     setDragState({ cardId, fromCol: colId })
     e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setDragImage && e.dataTransfer.setDragImage(e.target, e.target.offsetWidth / 2, 20)
+
+    const rect = e.target.getBoundingClientRect()
+    const clone = e.target.cloneNode(true)
+    clone.style.position = 'fixed'
+    clone.style.top = rect.top + 'px'
+    clone.style.left = rect.left + 'px'
+    clone.style.width = rect.width + 'px'
+    clone.style.opacity = '1'
+    clone.style.pointerEvents = 'none'
+    clone.style.transform = 'scale(1.05) rotate(0.5deg)'
+    clone.style.boxShadow = '0 25px 60px rgba(0,0,0,0.25)'
+    clone.style.borderRadius = '12px'
+    clone.style.zIndex = '9999'
+    clone.style.transition = 'none'
+    clone.style.margin = '0'
+    document.body.appendChild(clone)
+    e.dataTransfer.setDragImage(clone, e.clientX - rect.left, e.clientY - rect.top)
+    requestAnimationFrame(() => {
+      if (clone.parentNode) document.body.removeChild(clone)
+    })
   }
 
   const handleDragEnd = () => {
@@ -107,6 +126,7 @@ export default function Tablero() {
   }
 
   const handleDragOver = (e, colId) => {
+    if (columnDrag !== null) return
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
     const colEl = e.currentTarget
@@ -120,6 +140,7 @@ export default function Tablero() {
   }
 
   const handleDragLeave = (e, colId) => {
+    if (columnDrag !== null) return
     if (dropTarget?.colId === colId && !e.currentTarget.contains(e.relatedTarget)) {
       setDropTarget(prev => prev?.colId === colId ? null : prev)
     }
@@ -127,11 +148,10 @@ export default function Tablero() {
 
   const handleDrop = (e, colId) => {
     e.preventDefault()
-    if (!dragState) return
+    if (!dragState || columnDrag !== null) return
     if (!cards[dragState.fromCol]?.some(c => c.id === dragState.cardId)) return
     const dropIdx = dropTarget?.colId === colId ? dropTarget.index : (cards[colId]?.length || 0)
     moveCard(dragState.cardId, dragState.fromCol, colId, dropIdx)
-    if (dragNodeRef.current) dragNodeRef.current.style.opacity = '1'
     dragNodeRef.current = null
     setDragState(null)
     setDropTarget(null)
@@ -139,11 +159,31 @@ export default function Tablero() {
 
   const handleColumnDragStart = (e, idx) => {
     e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setDragImage && e.dataTransfer.setDragImage(e.target, e.target.offsetWidth / 2, 20)
     setColumnDrag(idx)
+
+    const rect = e.currentTarget.getBoundingClientRect()
+    const clone = e.currentTarget.cloneNode(true)
+    clone.style.position = 'fixed'
+    clone.style.top = rect.top + 'px'
+    clone.style.left = rect.left + 'px'
+    clone.style.width = rect.width + 'px'
+    clone.style.opacity = '1'
+    clone.style.pointerEvents = 'none'
+    clone.style.transform = 'scale(1.02) rotate(0.3deg)'
+    clone.style.boxShadow = '0 25px 60px rgba(0,0,0,0.2)'
+    clone.style.borderRadius = '2rem'
+    clone.style.zIndex = '9999'
+    clone.style.transition = 'none'
+    clone.style.margin = '0'
+    document.body.appendChild(clone)
+    e.dataTransfer.setDragImage(clone, e.clientX - rect.left, e.clientY - rect.top)
+    requestAnimationFrame(() => {
+      if (clone.parentNode) document.body.removeChild(clone)
+    })
   }
 
   const handleColumnDragOver = (e, idx) => {
+    if (dragState !== null) return
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
     if (columnDrag !== null && columnDrag !== idx) setColumnDropIdx(idx)
@@ -240,7 +280,7 @@ export default function Tablero() {
                 onDragOver={(e) => handleColumnDragOver(e, colIdx)}
                 onDragEnd={handleColumnDrop}
                 onDrop={handleColumnDrop}
-                className={`glass-panel-solid rounded-[2rem] p-3 shadow-lg transition-all ${dropTarget?.colId === col.id ? 'shadow-[0_0_0_2px_#3573A3]' : ''} ${isOver ? 'ring-2 ring-primary/60 scale-[1.02]' : ''} ${columnDrag === colIdx ? 'shadow-2xl scale-[1.02] rotate-[0.3deg] z-50 ring-2 ring-primary/40' : ''} cursor-grab active:cursor-grabbing`}
+                className={`glass-panel-solid rounded-[2rem] p-3 transition-all ${dropTarget?.colId === col.id ? 'shadow-[0_0_0_2px_#3573A3]' : ''} ${isOver ? 'ring-2 ring-primary/60 scale-[1.02]' : ''} ${columnDrag === colIdx ? 'shadow-2xl scale-[1.02] rotate-[0.3deg] z-50 ring-2 ring-primary/40' : ''} cursor-grab active:cursor-grabbing`}
               >
                 <div className={`${colorClass} border rounded-xl mb-3 p-2 transition-shadow hover:shadow-md`}>
                   <div className="flex items-center justify-between gap-1">
