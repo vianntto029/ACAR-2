@@ -161,25 +161,14 @@ export default function Tablero() {
     e.dataTransfer.effectAllowed = 'move'
     setColumnDrag(idx)
 
-    const rect = e.currentTarget.getBoundingClientRect()
-    const clone = e.currentTarget.cloneNode(true)
-    clone.style.position = 'fixed'
-    clone.style.top = rect.top + 'px'
-    clone.style.left = rect.left + 'px'
-    clone.style.width = rect.width + 'px'
-    clone.style.opacity = '1'
-    clone.style.pointerEvents = 'none'
-    clone.style.transform = 'scale(1.02) rotate(0.3deg)'
-    clone.style.boxShadow = '0 25px 60px rgba(0,0,0,0.2)'
-    clone.style.borderRadius = '2rem'
-    clone.style.zIndex = '9999'
-    clone.style.transition = 'none'
-    clone.style.margin = '0'
+    const colEl = e.currentTarget.parentElement
+    if (!colEl) return
+    const rect = colEl.getBoundingClientRect()
+    const clone = colEl.cloneNode(true)
+    clone.style.cssText = 'position:fixed;top:' + rect.top + 'px;left:' + rect.left + 'px;width:' + rect.width + 'px;opacity:1;pointer-events:none;transform:scale(1.02) rotate(0.3deg);box-shadow:0 25px 60px rgba(0,0,0,0.2);border-radius:2rem;z-index:9999;transition:none;margin:0'
     document.body.appendChild(clone)
     e.dataTransfer.setDragImage(clone, e.clientX - rect.left, e.clientY - rect.top)
-    requestAnimationFrame(() => {
-      if (clone.parentNode) document.body.removeChild(clone)
-    })
+    requestAnimationFrame(() => { if (clone.parentNode) document.body.removeChild(clone) })
   }
 
   const handleColumnDragOver = (e, idx) => {
@@ -275,14 +264,17 @@ export default function Tablero() {
             return (
               <div
                 key={col.id}
-                draggable
-                onDragStart={(e) => handleColumnDragStart(e, colIdx)}
-                onDragOver={(e) => handleColumnDragOver(e, colIdx)}
-                onDragEnd={handleColumnDrop}
-                onDrop={handleColumnDrop}
-                className={`glass-panel-solid rounded-[2rem] p-3 transition-all ${dropTarget?.colId === col.id ? 'shadow-[0_0_0_2px_#3573A3]' : ''} ${isOver ? 'ring-2 ring-primary/60 scale-[1.02]' : ''} ${columnDrag === colIdx ? 'shadow-2xl scale-[1.02] rotate-[0.3deg] z-50 ring-2 ring-primary/40' : ''} cursor-grab active:cursor-grabbing`}
+                style={{ boxShadow: 'none' }}
+                className={`glass-panel-solid rounded-[2rem] p-3 transition-all ${dropTarget?.colId === col.id ? 'shadow-[0_0_0_2px_#3573A3]' : ''} ${isOver ? 'ring-2 ring-primary/60 scale-[1.02]' : ''}`}
               >
-                <div className={`${colorClass} border rounded-xl mb-3 p-2 transition-shadow hover:shadow-md`}>
+                <div
+                  draggable
+                  onDragStart={(e) => handleColumnDragStart(e, colIdx)}
+                  onDragOver={(e) => handleColumnDragOver(e, colIdx)}
+                  onDragEnd={handleColumnDrop}
+                  onDrop={handleColumnDrop}
+                  className={`${colorClass} border rounded-xl mb-3 p-2 transition-shadow hover:shadow-md cursor-grab active:cursor-grabbing`}
+                >
                   <div className="flex items-center justify-between gap-1">
                     <div className="flex items-center gap-1 min-w-0">
                       <GripVertical className="w-3.5 h-3.5 text-secondary/40 flex-shrink-0" />
