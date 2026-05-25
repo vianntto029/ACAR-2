@@ -124,6 +124,7 @@ export default function Dashboard() {
     if (manualList.length === 0) return
     setManualStatus('Guardando...')
     try {
+      const sid = currentSessionId || initSession({ materia: currentMateria, instituto: currentInstituto, programa: currentPrograma })
       for (const student of manualList) {
         await push(ref(db, `institutos/${institutoActivo}/attendance`), {
           name: student.name,
@@ -135,6 +136,7 @@ export default function Dashboard() {
           time: new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false }),
           code: dailyCode(today),
           instituto: currentInstituto || '',
+          sessionId: sid,
         })
       }
       setManualStatus(`${manualList.length} estudiante(s) registrado(s) en Firebase`)
@@ -185,6 +187,7 @@ export default function Dashboard() {
     if (selected.length === 0) { setManualStatus('Selecciona al menos un estudiante'); return }
     setManualStatus('Guardando...')
     try {
+      const sid = currentSessionId || initSession({ materia: currentMateria, instituto: currentInstituto, programa: currentPrograma })
       for (const student of selected) {
         await push(ref(db, `institutos/${institutoActivo}/attendance`), {
           name: student.name,
@@ -196,6 +199,7 @@ export default function Dashboard() {
           time: new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false }),
           code: dailyCode(today),
           instituto: currentInstituto || '',
+          sessionId: sid,
         })
       }
       setManualStatus(`${selected.length} estudiante(s) registrado(s) como ASISTENTE(S)`)
@@ -266,7 +270,7 @@ export default function Dashboard() {
     }
   }
 
-  const qrData = `https://acar-2-git-main-vianntto029s-projects.vercel.app/registro?materia=${encodeURIComponent(currentMateria)}`
+  const qrData = `https://acar-2.vercel.app/registro?materia=${encodeURIComponent(currentMateria)}&sesion=${currentSessionId || ''}`
 
   const getInitials = (name) => {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()

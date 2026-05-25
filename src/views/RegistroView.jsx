@@ -11,6 +11,7 @@ export default function RegistroView() {
   const urlParams = new URLSearchParams(window.location.search)
   const isQR = urlParams.has('materia')
   const materiaParam = urlParams.get('materia') || ''
+  const sessionIdParam = urlParams.get('sesion') || ''
 
   const [form, setForm] = useState({
     name: '',
@@ -49,6 +50,7 @@ export default function RegistroView() {
         nationalId: cleanId,
         seccion: cleanSeccion,
         representante: cleanRep,
+        sessionId: sessionIdParam,
       })
       setIsSubmitted(true)
       if (!isQR) {
