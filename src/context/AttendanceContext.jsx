@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import { db, ref, push, onValue, remove, get, set } from '../firebase'
+import { db, ref, push, onValue, remove, get } from '../firebase'
 
 const AttendanceContext = createContext(null)
 
@@ -35,12 +35,22 @@ export function useAttendance() {
   return ctx
 }
 
+function loadLocalSessions() {
+  try {
+    return JSON.parse(localStorage.getItem('acar_sessions') || '[]')
+  } catch { return [] }
+}
+
+function saveLocalSessions(sessions) {
+  localStorage.setItem('acar_sessions', JSON.stringify(sessions))
+}
+
 export function AttendanceProvider({ children }) {
   const [institutoActivo, setInstitutoActivo] = useState(() => {
     return localStorage.getItem('instituto-activo') || INSTITUTOS[0].id
   })
   const [attendance, setAttendance] = useState([])
-  const [sessions, setSessions] = useState([])
+  const [localSessions, setLocalSessions] = useState(loadLocalSessions)
   const [currentSessionId, setCurrentSessionId] = useState(() => {
     return localStorage.getItem('current-session-id') || null
   })
@@ -68,46 +78,32 @@ export function AttendanceProvider({ children }) {
       } catch (e) {
         console.error('Attendance load error:', e)
       }
-    }, (err) => {
-      console.error('Attendance Firebase error:', err)
-    })
+    }, () => {})
     return () => unsubscribe()
   }, [institutoActivo])
 
-  useEffect(() => {
-    const sessionsRef = ref(db, `institutos/${institutoActivo}/sessions`)
-    const unsubscribe = onValue(sessionsRef, (snapshot) => {
-      try {
-        const data = []
-        snapshot.forEach((child) => {
-          data.push({ ...child.val(), id: child.key })
-        })
-        data.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '') || 0)
-        setSessions(data)
-      } catch (e) {
-        console.error('Sessions load error:', e)
+  const sessions = (() => {
+    const fromLocal = [...localSessions]
+    const localIds = new Set(fromLocal.map(s => s.id))
+    attendance.forEach(a => {
+      if (a.sessionId && !localIds.has(a.sessionId)) {
+        fromLocal.push({ id: a.sessionId, date: a.date, materia: a.subject || '', time: a.time || '', createdAt: a.date + 'T' + (a.time || '00:00') })
+        localIds.add(a.sessionId)
       }
-    }, (err) => {
-      console.error('Sessions Firebase error:', err)
     })
-    return () => unsubscribe()
-  }, [institutoActivo])
+    return fromLocal.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '') || 0)
+  })()
 
-  async function createSession({ materia, instituto, programa }) {
+  function initSession({ materia, instituto, programa }) {
     const date = todayKey()
-    const sessionRef = push(ref(db, `institutos/${institutoActivo}/sessions`))
-    const sessionData = {
-      date,
-      materia: materia || '',
-      instituto: instituto || '',
-      programa: programa || '',
-      createdAt: new Date().toISOString(),
-      time: currentTime(),
-    }
-    await set(sessionRef, sessionData)
-    const newId = sessionRef.key
-    setCurrentSessionId(newId)
-    return newId
+    const time = currentTime()
+    const id = Date.now().toString()
+    const session = { id, date, materia: materia || '', instituto: instituto || '', programa: programa || '', createdAt: new Date().toISOString(), time }
+    const updated = [session, ...localSessions]
+    setLocalSessions(updated)
+    saveLocalSessions(updated)
+    setCurrentSessionId(id)
+    return id
   }
 
   async function checkDuplicate(nationalId, date) {
@@ -126,21 +122,12 @@ export function AttendanceProvider({ children }) {
     const target = instituto || institutoActivo
     const date = todayKey()
     const code = dailyCode(date)
-
     const duplicate = await checkDuplicate(nationalId, date)
-    if (duplicate) {
-      throw new Error('DUPLICADO')
-    }
-
+    if (duplicate) throw new Error('DUPLICADO')
     const record = {
-      name,
-      subject,
-      nationalId,
-      seccion,
+      name, subject, nationalId, seccion,
       representante: representante || '',
-      date,
-      time: currentTime(),
-      code,
+      date, time: currentTime(), code,
       instituto: target,
       sessionId: sessionId || currentSessionId || '',
     }
@@ -152,9 +139,7 @@ export function AttendanceProvider({ children }) {
     const snapshot = await get(ref(db, `institutos/${institutoActivo}/attendance`))
     const toRemove = []
     snapshot.forEach(child => {
-      if (child.val().date === date) {
-        toRemove.push(child.key)
-      }
+      if (child.val().date === date) toRemove.push(child.key)
     })
     for (const key of toRemove) {
       await remove(ref(db, `institutos/${institutoActivo}/attendance/${key}`))
@@ -177,7 +162,7 @@ export function AttendanceProvider({ children }) {
     <AttendanceContext.Provider value={{
       attendance, registerAttendance, resetAttendance,
       switchInstituto, institutoActivo,
-      sessions, currentSessionId, createSession,
+      sessions, currentSessionId, initSession,
       setCurrentSessionId, getSessionsByDate, getAttendanceBySession,
     }}>
       {children}

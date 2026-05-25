@@ -11,7 +11,7 @@ import ExcelJS from 'exceljs'
 import { motion, AnimatePresence } from 'motion/react'
 
 export default function Dashboard() {
-  const { attendance, resetAttendance, sessions, currentSessionId, createSession, setCurrentSessionId, getSessionsByDate, getAttendanceBySession } = useAttendance()
+  const { attendance, resetAttendance, sessions, currentSessionId, initSession, setCurrentSessionId, getSessionsByDate, getAttendanceBySession } = useAttendance()
   const today = todayKey()
   const [selectedDate, setSelectedDate] = useState(today)
   const todaySessions = getSessionsByDate(selectedDate)
@@ -64,9 +64,9 @@ export default function Dashboard() {
     setActiveForm(null)
   }
 
-  const handleGenerate = async () => {
+  const handleGenerate = () => {
     setQrStatus('active')
-    const sid = await createSession({ materia: currentMateria, instituto: currentInstituto, programa: currentPrograma })
+    initSession({ materia: currentMateria, instituto: currentInstituto, programa: currentPrograma })
     setSelectedDate(today)
     setDateNav('today')
   }
